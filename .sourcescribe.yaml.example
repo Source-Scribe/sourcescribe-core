@@ -1,0 +1,65 @@
+# SourceScribe Configuration Example
+# Copy this to .sourcescribe.yaml and customize for your project
+
+# LLM Provider Configuration
+llm:
+  provider: "anthropic"  # Options: anthropic, openai, ollama
+  model: "claude-3-5-sonnet-20241022"
+  # api_key: ""  # Optional - defaults to environment variable
+  temperature: 0.3
+  max_tokens: 4000
+  timeout: 60
+
+# Repository Settings
+repository:
+  path: "."
+  exclude_patterns:
+    - "*.pyc"
+    - "__pycache__"
+    - "node_modules"
+    - ".git"
+    - "*.egg-info"
+    - "dist"
+    - "build"
+    - ".venv"
+    - "venv"
+  include_patterns:
+    - "*.py"
+    - "*.js"
+    - "*.jsx"
+    - "*.ts"
+    - "*.tsx"
+    - "*.java"
+    - "*.go"
+    - "*.rs"
+    - "*.cpp"
+    - "*.c"
+    - "*.h"
+  max_file_size: 1048576  # 1MB
+  follow_symlinks: false
+
+# Documentation Output
+output:
+  path: "./docs/generated"
+  format: "markdown"
+  include_diagrams: true
+  diagram_format: "mermaid"
+  overwrite: true
+  create_index: true
+
+# Watch Mode Settings
+watch:
+  enabled: true
+  debounce_seconds: 2.0
+  batch_changes: true
+  recursive: true
+
+# Documentation Style
+style:
+  include_examples: true
+  include_architecture: true
+  include_api_docs: true
+  include_dependencies: true
+  include_metrics: false
+  verbosity: "detailed"  # Options: minimal, normal, detailed
+  language: "en"
