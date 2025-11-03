@@ -177,10 +177,28 @@ def is_text_file(file_path: str) -> bool:
         True if text file
     """
     try:
-        with open(file_path, 'r', encoding='utf-8') as f:
-            f.read(1024)
-        return True
-    except (UnicodeDecodeError, PermissionError):
+        # Read first 8192 bytes as binary
+        with open(file_path, 'rb') as f:
+            chunk = f.read(8192)
+        
+        # Check for null bytes (common in binary files)
+        if b'\x00' in chunk:
+            return False
+        
+        # Try to decode as UTF-8
+        try:
+            chunk.decode('utf-8')
+            return True
+        except UnicodeDecodeError:
+            # Try other common encodings
+            for encoding in ['latin-1', 'cp1252']:
+                try:
+                    chunk.decode(encoding)
+                    return True
+                except UnicodeDecodeError:
+                    continue
+            return False
+    except (IOError, PermissionError):
         return False
 
 

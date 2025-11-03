@@ -2,7 +2,7 @@
 
 from typing import List, Optional, Dict, Any
 from enum import Enum
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, field_validator, ConfigDict
 
 
 class LLMProvider(str, Enum):
@@ -34,6 +34,8 @@ class DiagramFormat(str, Enum):
 
 class LLMConfig(BaseModel):
     """LLM provider configuration."""
+    model_config = ConfigDict(use_enum_values=True)
+    
     provider: LLMProvider = Field(default=LLMProvider.ANTHROPIC, description="LLM provider to use")
     model: str = Field(default="claude-3-5-sonnet-20241022", description="Model identifier")
     api_key: Optional[str] = Field(default=None, description="API key (can be set via env var)")
@@ -41,9 +43,6 @@ class LLMConfig(BaseModel):
     temperature: float = Field(default=0.3, ge=0.0, le=2.0, description="Sampling temperature")
     max_tokens: int = Field(default=4000, gt=0, description="Maximum tokens in response")
     timeout: int = Field(default=60, gt=0, description="Request timeout in seconds")
-    
-    class Config:
-        use_enum_values = True
 
 
 class RepositoryConfig(BaseModel):
@@ -70,15 +69,14 @@ class RepositoryConfig(BaseModel):
 
 class OutputConfig(BaseModel):
     """Documentation output configuration."""
+    model_config = ConfigDict(use_enum_values=True)
+    
     path: str = Field(default="./docs/generated", description="Output directory path")
     format: OutputFormat = Field(default=OutputFormat.MARKDOWN, description="Output format")
     include_diagrams: bool = Field(default=True, description="Include architecture diagrams")
     diagram_format: DiagramFormat = Field(default=DiagramFormat.MERMAID, description="Diagram format")
     overwrite: bool = Field(default=True, description="Overwrite existing documentation")
     create_index: bool = Field(default=True, description="Create index/README file")
-    
-    class Config:
-        use_enum_values = True
 
 
 class WatchConfig(BaseModel):
@@ -88,8 +86,9 @@ class WatchConfig(BaseModel):
     batch_changes: bool = Field(default=True, description="Batch multiple changes together")
     recursive: bool = Field(default=True, description="Watch subdirectories recursively")
     
-    @validator("debounce_seconds")
-    def validate_debounce(cls, v):
+    @field_validator("debounce_seconds")
+    @classmethod
+    def validate_debounce(cls, v: float) -> float:
         """Validate debounce is reasonable."""
         if v > 60.0:
             raise ValueError("debounce_seconds should not exceed 60 seconds")
@@ -98,6 +97,8 @@ class WatchConfig(BaseModel):
 
 class StyleConfig(BaseModel):
     """Documentation style configuration."""
+    model_config = ConfigDict(use_enum_values=True)
+    
     include_examples: bool = Field(default=True, description="Include code examples")
     include_architecture: bool = Field(default=True, description="Include architecture overview")
     include_api_docs: bool = Field(default=True, description="Include API documentation")
@@ -105,25 +106,21 @@ class StyleConfig(BaseModel):
     include_metrics: bool = Field(default=False, description="Include code metrics")
     verbosity: Verbosity = Field(default=Verbosity.DETAILED, description="Documentation detail level")
     language: str = Field(default="en", description="Documentation language")
-    
-    class Config:
-        use_enum_values = True
 
 
 class SourceScribeConfig(BaseModel):
     """Main SourceScribe configuration."""
+    model_config = ConfigDict(extra="allow")  # Allow additional fields for extensibility
+    
     llm: LLMConfig = Field(default_factory=LLMConfig, description="LLM configuration")
     repository: RepositoryConfig = Field(default_factory=RepositoryConfig, description="Repository settings")
     output: OutputConfig = Field(default_factory=OutputConfig, description="Output configuration")
     watch: WatchConfig = Field(default_factory=WatchConfig, description="Watch mode settings")
     style: StyleConfig = Field(default_factory=StyleConfig, description="Documentation style")
     
-    class Config:
-        extra = "allow"  # Allow additional fields for extensibility
-    
     def to_dict(self) -> Dict[str, Any]:
         """Convert config to dictionary."""
-        return self.dict(exclude_none=True)
+        return self.model_dump(exclude_none=True, mode='python')
     
     @classmethod
     def from_dict(cls, data: Dict[str, Any]) -> "SourceScribeConfig":

@@ -100,7 +100,8 @@ class ConfigLoader:
         path = Path(output_path)
         path.parent.mkdir(parents=True, exist_ok=True)
         
-        data = config.to_dict()
+        # Use mode='json' to ensure enums are serialized as strings
+        data = config.model_dump(exclude_none=True, mode='json')
         
         with open(path, 'w') as f:
             yaml.dump(data, f, default_flow_style=False, sort_keys=False)
