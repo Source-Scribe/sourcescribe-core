@@ -68,6 +68,33 @@ def generate(
         logger.info(f"Documentation generated at: {cfg.output.path}")
         click.echo(click.style('✓ Documentation generated successfully!', fg='green'))
         
+    except ValueError as e:
+        # Handle API key errors gracefully
+        error_msg = str(e)
+        if 'API_KEY' in error_msg:
+            click.echo(click.style('\n✗ API Key Required', fg='red', bold=True), err=True)
+            click.echo(f'\n{error_msg}\n', err=True)
+            click.echo('To fix this, set your API key as an environment variable:\n', err=True)
+            
+            if 'ANTHROPIC' in error_msg:
+                click.echo('  export ANTHROPIC_API_KEY="your-anthropic-api-key-here"', err=True)
+                click.echo('\nGet your API key from: https://console.anthropic.com/settings/keys', err=True)
+            elif 'OPENAI' in error_msg:
+                click.echo('  export OPENAI_API_KEY="your-openai-api-key-here"', err=True)
+                click.echo('\nGet your API key from: https://platform.openai.com/api-keys', err=True)
+            
+            click.echo('\nAlternatively, use Ollama for local LLMs (no API key needed):', err=True)
+            click.echo('  sourcescribe generate --provider ollama --model llama2\n', err=True)
+            sys.exit(1)
+        else:
+            logger.error(f"Generation failed: {e}")
+            click.echo(click.style(f'✗ Error: {e}', fg='red'), err=True)
+            sys.exit(1)
+    except ImportError as e:
+        # Handle missing SDK errors
+        click.echo(click.style('\n✗ Missing Dependency', fg='red', bold=True), err=True)
+        click.echo(f'\n{e}\n', err=True)
+        sys.exit(1)
     except Exception as e:
         logger.error(f"Generation failed: {e}", exc_info=True)
         click.echo(click.style(f'✗ Error: {e}', fg='red'), err=True)
@@ -133,6 +160,33 @@ def watch(
     except KeyboardInterrupt:
         logger.info("Watch mode stopped by user")
         click.echo(click.style('\n✓ Watch mode stopped', fg='yellow'))
+    except ValueError as e:
+        # Handle API key errors gracefully
+        error_msg = str(e)
+        if 'API_KEY' in error_msg:
+            click.echo(click.style('\n✗ API Key Required', fg='red', bold=True), err=True)
+            click.echo(f'\n{error_msg}\n', err=True)
+            click.echo('To fix this, set your API key as an environment variable:\n', err=True)
+            
+            if 'ANTHROPIC' in error_msg:
+                click.echo('  export ANTHROPIC_API_KEY="your-anthropic-api-key-here"', err=True)
+                click.echo('\nGet your API key from: https://console.anthropic.com/settings/keys', err=True)
+            elif 'OPENAI' in error_msg:
+                click.echo('  export OPENAI_API_KEY="your-openai-api-key-here"', err=True)
+                click.echo('\nGet your API key from: https://platform.openai.com/api-keys', err=True)
+            
+            click.echo('\nAlternatively, use Ollama for local LLMs (no API key needed):', err=True)
+            click.echo('  sourcescribe watch --provider ollama --model llama2\n', err=True)
+            sys.exit(1)
+        else:
+            logger.error(f"Watch failed: {e}")
+            click.echo(click.style(f'✗ Error: {e}', fg='red'), err=True)
+            sys.exit(1)
+    except ImportError as e:
+        # Handle missing SDK errors
+        click.echo(click.style('\n✗ Missing Dependency', fg='red', bold=True), err=True)
+        click.echo(f'\n{e}\n', err=True)
+        sys.exit(1)
     except Exception as e:
         logger.error(f"Watch failed: {e}", exc_info=True)
         click.echo(click.style(f'✗ Error: {e}', fg='red'), err=True)
