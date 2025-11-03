@@ -390,11 +390,20 @@ Write in a professional but accessible tone."""
         from fnmatch import fnmatch
         
         path = Path(file_path)
+        path_parts = path.parts
         
         # Check exclude patterns
         for pattern in self.config.repository.exclude_patterns:
-            if fnmatch(str(path), pattern) or fnmatch(path.name, pattern):
+            # Check full path
+            if fnmatch(str(path), pattern):
                 return False
+            # Check filename
+            if fnmatch(path.name, pattern):
+                return False
+            # Check if any directory in the path matches
+            if not any(c in pattern for c in ['*', '?', '[']):
+                if pattern in path_parts:
+                    return False
         
         # Check include patterns
         for pattern in self.config.repository.include_patterns:

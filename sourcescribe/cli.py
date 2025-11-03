@@ -90,6 +90,11 @@ def generate(
             logger.error(f"Generation failed: {e}")
             click.echo(click.style(f'✗ Error: {e}', fg='red'), err=True)
             sys.exit(1)
+    except ConnectionError as e:
+        # Handle Ollama connection errors
+        click.echo(click.style('\n✗ Connection Error', fg='red', bold=True), err=True)
+        click.echo(f'\n{e}\n', err=True)
+        sys.exit(1)
     except ImportError as e:
         # Handle missing SDK errors
         click.echo(click.style('\n✗ Missing Dependency', fg='red', bold=True), err=True)
@@ -182,6 +187,11 @@ def watch(
             logger.error(f"Watch failed: {e}")
             click.echo(click.style(f'✗ Error: {e}', fg='red'), err=True)
             sys.exit(1)
+    except ConnectionError as e:
+        # Handle Ollama connection errors
+        click.echo(click.style('\n✗ Connection Error', fg='red', bold=True), err=True)
+        click.echo(f'\n{e}\n', err=True)
+        sys.exit(1)
     except ImportError as e:
         # Handle missing SDK errors
         click.echo(click.style('\n✗ Missing Dependency', fg='red', bold=True), err=True)

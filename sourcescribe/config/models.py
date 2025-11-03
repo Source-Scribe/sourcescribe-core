@@ -50,8 +50,19 @@ class RepositoryConfig(BaseModel):
     path: str = Field(default=".", description="Repository root path")
     exclude_patterns: List[str] = Field(
         default_factory=lambda: [
-            "*.pyc", "__pycache__", "node_modules", ".git", 
-            "*.egg-info", "dist", "build", ".venv", "venv"
+            "*.pyc", "__pycache__", "*/__pycache__/*", 
+            "node_modules", "*/node_modules/*",
+            ".git", "*/.git/*",
+            "*.egg-info", "*.egg-info/*",
+            "dist", "*/dist/*",
+            "build", "*/build/*",
+            ".venv", "*/.venv/*", ".venv/*",
+            "venv", "*/venv/*", "venv/*",
+            "site-packages", "*/site-packages/*",
+            ".tox", "*/.tox/*",
+            ".pytest_cache", "*/.pytest_cache/*",
+            ".mypy_cache", "*/.mypy_cache/*",
+            "*.so", "*.dylib", "*.dll"
         ],
         description="Patterns to exclude from scanning"
     )

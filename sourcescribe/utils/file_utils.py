@@ -132,9 +132,25 @@ def find_files(
         rel_path_str = str(rel_path)
         
         # Check exclude patterns
-        if any(fnmatch.fnmatch(rel_path_str, pattern) or
-               fnmatch.fnmatch(path.name, pattern)
-               for pattern in exclude_patterns):
+        # Check against full path, filename, and individual path components
+        path_parts = rel_path.parts
+        excluded = False
+        for pattern in exclude_patterns:
+            # Check full relative path
+            if fnmatch.fnmatch(rel_path_str, pattern):
+                excluded = True
+                break
+            # Check filename
+            if fnmatch.fnmatch(path.name, pattern):
+                excluded = True
+                break
+            # Check if any directory in the path matches (for patterns like "venv", "site-packages")
+            if not any(c in pattern for c in ['*', '?', '[']):  # Simple pattern without wildcards
+                if pattern in path_parts:
+                    excluded = True
+                    break
+        
+        if excluded:
             continue
         
         # Check include patterns

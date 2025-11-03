@@ -21,6 +21,30 @@ class OllamaProvider(BaseLLMProvider):
             self.model = "llama2"
         
         self.api_url = f"{self.base_url}/api"
+        
+        # Check if Ollama is running
+        self._check_connection()
+    
+    def _check_connection(self) -> None:
+        """Check if Ollama server is accessible."""
+        try:
+            response = requests.get(f"{self.base_url}/api/tags", timeout=5)
+            response.raise_for_status()
+        except requests.exceptions.ConnectionError:
+            raise ConnectionError(
+                f"Cannot connect to Ollama at {self.base_url}\n"
+                "Make sure Ollama is installed and running:\n"
+                "  1. Install: https://ollama.ai/download\n"
+                "  2. Start: ollama serve\n"
+                "  3. Pull a model: ollama pull llama2"
+            )
+        except requests.exceptions.HTTPError as e:
+            if e.response.status_code == 404:
+                raise ConnectionError(
+                    f"Ollama server at {self.base_url} is not responding correctly.\n"
+                    "Make sure you're running a compatible version of Ollama."
+                )
+            raise
     
     def generate(
         self,
@@ -56,12 +80,36 @@ class OllamaProvider(BaseLLMProvider):
         }
         
         # Make API call
-        response = requests.post(
-            f"{self.api_url}/generate",
-            json=data,
-            timeout=self.timeout,
-        )
-        response.raise_for_status()
+        try:
+            response = requests.post(
+                f"{self.api_url}/generate",
+                json=data,
+                timeout=self.timeout,
+            )
+            response.raise_for_status()
+        except requests.exceptions.HTTPError as e:
+            if e.response.status_code == 404:
+                # Try to get list of available models
+                try:
+                    tags_response = requests.get(f"{self.api_url}/tags", timeout=5)
+                    if tags_response.ok:
+                        models_data = tags_response.json()
+                        available_models = [m.get('name', '') for m in models_data.get('models', [])]
+                        if available_models:
+                            raise ValueError(
+                                f"Model '{self.model}' not found. Available models: {', '.join(available_models)}\n"
+                                f"Pull the model with: ollama pull {self.model}"
+                            )
+                except:
+                    pass
+                raise ConnectionError(
+                    f"Ollama API endpoint not found.\n"
+                    f"Make sure:\n"
+                    f"  1. Ollama is running: ollama serve\n"
+                    f"  2. Model '{self.model}' is pulled: ollama pull {self.model}\n"
+                    f"  3. You're using a compatible Ollama version"
+                )
+            raise
         
         result = response.json()
         
