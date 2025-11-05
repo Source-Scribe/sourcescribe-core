@@ -6,106 +6,154 @@
 
 The system is composed of the following key components:
 
-### `setup` and `__init__`
-These modules handle the package setup and initialization. They are responsible for setting up the environment and making the package importable.
+### setup
+This module handles the package setup and installation process, leveraging the `setuptools` library.
 
-### `anthropic_provider`, `ollama_provider`, and `openai_provider`
-These modules encapsulate the integration with different language model providers. They abstract away the provider-specific details and expose a common interface for the rest of the system to use.
+### `anthropic_provider`, `ollama_provider`, `openai_provider`
+These modules encapsulate the integration with different language model providers, abstracting away the provider-specific details behind a common interface defined in the `base` module.
 
-### `base` and `factory`
-The `base` module defines the core abstractions and interfaces used throughout the system. The `factory` module is responsible for creating instances of the appropriate provider based on the user's configuration.
+### `factory`
+The `factory` module is responsible for creating instances of the appropriate language model provider based on the user's configuration.
 
-### `cli`, `loader`, and `models`
-The `cli` module provides the command-line interface for the system. The `loader` module is responsible for loading configuration and other data from various sources. The `models` module defines the data structures used throughout the system.
+### `base`
+The `base` module defines the common interface and base classes for language model providers, ensuring a consistent API across different providers.
 
-### `analyzer`, `diagram`, `feature_generator`, and `generator`
-These modules work together to analyze the input data, generate diagrams, and produce the final output. The `analyzer` module is responsible for parsing and analyzing the input. The `diagram` module generates the visual diagrams. The `feature_generator` and `generator` modules work together to produce the final output.
+### `models`
+The `models` module defines the core data structures used throughout the system, such as prompts, responses, and configuration settings.
 
-### `file_utils`, `logger`, `parser`, `handler`, and `watcher`
-These are utility modules that provide file handling, logging, parsing, and monitoring functionality to the system.
+### `cli`
+The `cli` module provides the command-line interface, allowing users to interact with the system through the terminal.
+
+### `loader`
+The `loader` module is responsible for loading configuration settings from YAML files.
+
+### `analyzer`
+The `analyzer` module analyzes the user's code and extracts relevant information, such as function signatures and docstrings.
+
+### `diagram`
+The `diagram` module generates visual diagrams, such as class diagrams and sequence diagrams, to help users understand the system's architecture and behavior.
+
+### `feature_generator`
+The `feature_generator` module generates new features based on the user's code and configuration.
+
+### `generator`
+The `generator` module is responsible for orchestrating the overall feature generation process, coordinating the various components.
+
+### `file_utils`, `logger`, `parser`, `handler`, `watcher`
+These modules provide supporting functionality, such as file management, logging, parsing, and file system monitoring.
 
 ### `test_config`
-This module contains the test configuration and setup for the system.
+The `test_config` module contains utility functions for testing the system's configuration and data models.
 
 ## 2. Communication Patterns
 
-The main workflow of the system can be described as follows:
+The key communication patterns in the system are as follows:
 
+### Prompt Generation Workflow
 ```mermaid
 sequenceDiagram
+    participant User
     participant CLI
-    participant Loader
-    participant Factory
-    participant Provider
-    participant Analyzer
-    participant FeatureGenerator
     participant Generator
-    participant Diagram
+    participant FeatureGenerator
+    participant Analyzer
+    participant Provider
 
-    CLI->>Loader: Load configuration
-    Loader->>Factory: Create provider instance
-    Factory->>Provider: Initialize provider
-    CLI->>Analyzer: Analyze input
-    Analyzer->>FeatureGenerator: Generate features
-    FeatureGenerator->>Generator: Generate output
-    Generator->>Diagram: Generate diagrams
-    Diagram->>CLI: Return final output
+    User->>CLI: Initiate prompt generation
+    CLI->>Generator: Request prompt generation
+    Generator->>FeatureGenerator: Generate features
+    FeatureGenerator->>Analyzer: Analyze user code
+    Analyzer->>FeatureGenerator: Return analysis results
+    FeatureGenerator->>Generator: Return generated features
+    Generator->>Provider: Request prompt completion
+    Provider->>Generator: Return completed prompt
+    Generator->>CLI: Return completed prompt
+    CLI->>User: Display completed prompt
 ```
 
-The CLI module initiates the process by loading the configuration and creating the appropriate provider instance through the factory. The analyzer module then processes the input and passes the results to the feature generator, which in turn feeds the generator module. The generator module coordinates the diagram generation and returns the final output to the CLI.
+### Configuration Loading Workflow
+```mermaid
+sequenceDiagram
+    participant User
+    participant CLI
+    participant Loader
+    participant Models
+
+    User->>CLI: Request configuration load
+    CLI->>Loader: Load configuration
+    Loader->>Models: Validate and parse configuration
+    Models->>Loader: Return configuration objects
+    Loader->>CLI: Return configuration
+    CLI->>User: Display configuration
+```
 
 ## 3. Data Models
 
-The system uses the following key data models:
+The system's core data models are defined in the `models` module:
 
 ```mermaid
 classDiagram
-    class ProviderConfig
-    class AnalysisConfig
-    class FeatureConfig
-    class GeneratorConfig
-    class DiagramConfig
-    class InputData
-    class OutputData
+    class Prompt {
+        +text: str
+        +max_tokens: int
+        +temperature: float
+        +top_p: float
+        +n: int
+        +stop: list[str]
+        +presence_penalty: float
+        +frequency_penalty: float
+    }
 
-    ProviderConfig --> AnalysisConfig
-    AnalysisConfig --> FeatureConfig
-    FeatureConfig --> GeneratorConfig
-    GeneratorConfig --> DiagramConfig
-    InputData --> OutputData
+    class Response {
+        +text: str
+        +tokens: list[str]
+        +token_count: int
+    }
+
+    class ProviderConfig {
+        +name: str
+        +api_key: str
+        +model: str
+    }
+
+    class GeneratorConfig {
+        +prompt_template: str
+        +max_features: int
+        +feature_quality_threshold: float
+    }
+
+    class AnalyzerConfig {
+        +include_patterns: list[str]
+        +exclude_patterns: list[str]
+    }
+
+    Prompt "1" -- "1" Response
+    ProviderConfig "1" -- "1" Provider
+    GeneratorConfig "1" -- "1" Generator
+    AnalyzerConfig "1" -- "1" Analyzer
 ```
-
-- `ProviderConfig`: Holds the configuration for the language model provider.
-- `AnalysisConfig`: Specifies the parameters for the input analysis.
-- `FeatureConfig`: Defines the settings for feature generation.
-- `GeneratorConfig`: Configures the output generation process.
-- `DiagramConfig`: Specifies the settings for diagram generation.
-- `InputData`: Represents the data to be processed by the system.
-- `OutputData`: Encapsulates the final output, including the generated diagrams.
 
 ## 4. Design Patterns
 
 The system employs the following design patterns:
 
-1. **Factory Pattern**: The `factory` module uses the factory pattern to create instances of the appropriate language model provider based on the user's configuration.
+1. **Factory Pattern**: The `factory` module uses the Factory pattern to create instances of the appropriate language model provider based on the user's configuration.
+2. **Strategy Pattern**: The `base`, `anthropic_provider`, `ollama_provider`, and `openai_provider` modules use the Strategy pattern to provide a common interface for interacting with different language model providers.
+3. **Observer Pattern**: The `watcher` module uses the Observer pattern to monitor file system changes and notify the `handler` module.
+4. **Singleton Pattern**: The `logger` module uses the Singleton pattern to ensure a single, global logger instance.
 
-2. **Strategy Pattern**: The `anthropic_provider`, `ollama_provider`, and `openai_provider` modules implement the strategy pattern, allowing the system to use different language model providers interchangeably.
-
-3. **Observer Pattern**: The `watcher` module uses the observer pattern to monitor changes in the input data and trigger the analysis and generation process.
-
-4. **Decorator Pattern**: The `diagram` module uses the decorator pattern to add additional functionality to the diagram generation process, such as styling and layout.
-
-5. **Adapter Pattern**: The `base` module acts as an adapter, providing a common interface for the different language model providers to work with the rest of the system.
+These patterns help to improve the system's modularity, flexibility, and maintainability.
 
 ## 5. Extension Points
 
-The system is designed to be extensible, allowing users to add new language model providers, customize the analysis and generation process, and extend the functionality of the system.
+The system provides the following extension points:
 
-To add a new language model provider, you can create a new module that implements the `ProviderInterface` defined in the `base` module. This new provider can then be used by the `factory` module to create instances as needed.
+1. **Language Model Providers**: New language model providers can be added by implementing the `LanguageModelProvider` interface defined in the `base` module and registering them with the `factory` module.
+2. **Configuration Loaders**: New configuration loaders can be added by implementing the `ConfigLoader` interface defined in the `loader` module.
+3. **Feature Generators**: New feature generators can be added by implementing the `FeatureGenerator` interface defined in the `feature_generator` module.
+4. **Diagram Generators**: New diagram generators can be added by implementing the `DiagramGenerator` interface defined in the `diagram` module.
 
-To customize the analysis and generation process, you can override the default configurations in the `AnalysisConfig`, `FeatureConfig`, `GeneratorConfig`, and `DiagramConfig` data models. This allows you to adjust the parameters and behavior of the various components to suit your specific needs.
-
-Finally, to extend the functionality of the system, you can create new modules that integrate with the existing components. For example, you could add a new module that generates additional types of diagrams or integrates with external tools and services.
+These extension points allow the system to be easily expanded and customized to meet new requirements or integrate with additional language models and tools.
 
 ## System Architecture Diagram
 
@@ -140,18 +188,18 @@ graph TD
     M23[test_parser]
 
     M2 --> M3
-    M4 --> M3
+    M4 --> M2
     M4 --> M9
     M4 --> M6
+    M4 --> M3
     M4 --> M5
-    M4 --> M2
     M5 --> M3
     M6 --> M3
-    M7 --> M9
-    M7 --> M8
-    M7 --> M15
-    M7 --> M18
     M7 --> M13
+    M7 --> M18
+    M7 --> M9
+    M7 --> M15
+    M7 --> M8
     M8 --> M9
     M10 --> M9
     M10 --> M16
@@ -159,14 +207,14 @@ graph TD
     M10 --> M14
     M12 --> M3
     M12 --> M14
-    M13 --> M10
-    M13 --> M12
-    M13 --> M3
     M13 --> M9
     M13 --> M4
-    M13 --> M11
-    M13 --> M15
+    M13 --> M3
     M13 --> M14
+    M13 --> M15
+    M13 --> M10
+    M13 --> M11
+    M13 --> M12
     M17 --> M15
     M18 --> M17
     M18 --> M9

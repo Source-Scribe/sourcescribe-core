@@ -25,8 +25,8 @@ The following table outlines the available configuration options for SourceScrib
 | `max_tokens` | The maximum number of tokens to use for feature extraction. | `2048` |
 | `temperature` | The temperature to use for feature extraction. Higher values result in more creative output. | `0.7` |
 | `top_p` | The top-p value to use for feature extraction. Controls the diversity of the output. | `0.9` |
-| `diagrams` | A dictionary of settings for the various diagram types: <br> - `sequence`: Sequence diagrams <br> - `flowchart`: Flowcharts <br> - `class`: Class diagrams <br> - `state`: State diagrams | `{}` |
-| `watch` | Settings for the file watcher feature: <br> - `enabled`: Whether to enable the file watcher <br> - `interval`: The interval (in seconds) to check for file changes | `{"enabled": false, "interval": 5}` |
+| `diagrams` | A dictionary of settings for the various diagram types: <br /> - `sequence`: Sequence diagrams <br /> - `flowchart`: Flowcharts <br /> - `class`: Class diagrams <br /> - `state`: State diagrams | `{}` |
+| `watch` | Settings for the file watcher feature: <br /> - `enabled`: Whether to enable the file watcher <br /> - `interval`: The interval (in seconds) to check for file changes | `{"enabled": false, "interval": 5}` |
 
 ## Environment Variables
 
