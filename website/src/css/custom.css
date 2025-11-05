@@ -1,0 +1,106 @@
+/**
+ * Any CSS included here will be global. The classic template
+ * bundles Infima by default. Infima is a CSS framework designed to
+ * work well for content-centric websites.
+ */
+
+/* You can override the default Infima variables here. */
+:root {
+  --ifm-color-primary: #2e8555;
+  --ifm-color-primary-dark: #29784c;
+  --ifm-color-primary-darker: #277148;
+  --ifm-color-primary-darkest: #205d3b;
+  --ifm-color-primary-light: #33925d;
+  --ifm-color-primary-lighter: #359962;
+  --ifm-color-primary-lightest: #3cad6e;
+  --ifm-code-font-size: 95%;
+  --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.1);
+}
+
+/* For readability concerns, you should choose a lighter palette in dark mode. */
+[data-theme='dark'] {
+  --ifm-color-primary: #25c2a0;
+  --ifm-color-primary-dark: #21af90;
+  --ifm-color-primary-darker: #1fa588;
+  --ifm-color-primary-darkest: #1a8870;
+  --ifm-color-primary-light: #29d5b0;
+  --ifm-color-primary-lighter: #32d8b4;
+  --ifm-color-primary-lightest: #4fddbf;
+  --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.3);
+}
+
+/* Mermaid Diagram Enhancements */
+.docusaurus-mermaid-container {
+  /* Make container scrollable for large diagrams */
+  overflow: auto;
+  /* Add visual indication it's scrollable */
+  border: 1px solid var(--ifm-color-emphasis-300);
+  border-radius: 8px;
+  padding: 20px;
+  margin: 20px 0;
+  background: var(--ifm-background-surface-color);
+  /* Add cursor hint for scrollability */
+  cursor: grab;
+}
+
+.docusaurus-mermaid-container:active {
+  cursor: grabbing;
+}
+
+/* Make SVG diagrams larger and more readable */
+.docusaurus-mermaid-container svg {
+  /* Increase minimum size */
+  min-width: 100%;
+  max-width: none;
+  height: auto;
+  /* Add smooth scaling */
+  transition: transform 0.2s ease;
+}
+
+/* Add zoom on hover (optional - can be removed if too much) */
+.docusaurus-mermaid-container:hover svg {
+  transform: scale(1.02);
+}
+
+/* Improve text readability in diagrams */
+.docusaurus-mermaid-container text {
+  font-size: 14px !important;
+  font-family: var(--ifm-font-family-base);
+  font-weight: 500;
+}
+
+/* Style for node labels */
+.docusaurus-mermaid-container .nodeLabel {
+  font-size: 16px !important;
+  font-weight: 600;
+}
+
+/* Add hint text for users */
+.docusaurus-mermaid-container::after {
+  content: "💡 Tip: Scroll or drag to explore the diagram";
+  display: block;
+  text-align: center;
+  font-size: 12px;
+  color: var(--ifm-color-emphasis-600);
+  margin-top: 10px;
+  opacity: 0.7;
+}
+
+/* Advanced zoom container (if using Mermaid.tsx wrapper) */
+.mermaid-zoom-container {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid var(--ifm-color-emphasis-300);
+  border-radius: 8px;
+  padding: 20px;
+  margin: 20px 0;
+  background: var(--ifm-background-surface-color);
+}
+
+.mermaid-controls {
+  text-align: center;
+  padding: 8px;
+  background: var(--ifm-background-surface-color);
+  border-top: 1px solid var(--ifm-color-emphasis-300);
+  margin-top: 10px;
+}

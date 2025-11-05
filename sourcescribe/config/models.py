@@ -37,7 +37,7 @@ class LLMConfig(BaseModel):
     model_config = ConfigDict(use_enum_values=True)
     
     provider: LLMProvider = Field(default=LLMProvider.ANTHROPIC, description="LLM provider to use")
-    model: str = Field(default="claude-3-5-sonnet-20241022", description="Model identifier")
+    model: str = Field(default="claude-3-haiku-20240307", description="Model identifier")
     api_key: Optional[str] = Field(default=None, description="API key (can be set via env var)")
     base_url: Optional[str] = Field(default=None, description="Custom API base URL (for Ollama)")
     temperature: float = Field(default=0.3, ge=0.0, le=2.0, description="Sampling temperature")
@@ -62,7 +62,9 @@ class RepositoryConfig(BaseModel):
             ".tox", "*/.tox/*",
             ".pytest_cache", "*/.pytest_cache/*",
             ".mypy_cache", "*/.mypy_cache/*",
-            "*.so", "*.dylib", "*.dll"
+            "*.so", "*.dylib", "*.dll",
+            "website", "*/website/*",  # Exclude Docusaurus site
+            "docs", "*/docs/*",  # Exclude generated docs
         ],
         description="Patterns to exclude from scanning"
     )

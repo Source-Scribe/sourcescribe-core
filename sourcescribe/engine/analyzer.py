@@ -159,7 +159,22 @@ class CodeAnalyzer:
             module_name = path_obj.stem
             
             # Get dependencies
-            dependencies = self.extract_dependencies(analysis)
+            raw_dependencies = self.extract_dependencies(analysis)
+            
+            # Normalize dependencies to module names for internal imports
+            # Convert "sourcescribe.engine.analyzer" → "analyzer"
+            # Convert "sourcescribe.api.anthropic_provider" → "anthropic_provider"
+            dependencies = []
+            for dep in raw_dependencies:
+                if dep.startswith('sourcescribe.'):
+                    # Internal dependency - extract the module name (last part)
+                    dep_parts = dep.split('.')
+                    dep_module = dep_parts[-1]
+                    dependencies.append(dep_module)
+                elif '.' not in dep:
+                    # Simple import that might be another file in the project
+                    dependencies.append(dep)
+                # Skip external packages (anthropic, click, etc.)
             
             # Count elements
             elements = analysis.get('elements', [])

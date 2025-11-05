@@ -27,9 +27,9 @@ def main(verbose: bool, debug: bool):
 @click.argument('project_path', type=click.Path(exists=True), default='.')
 @click.option('--config', '-c', type=click.Path(), help='Configuration file path')
 @click.option('--provider', type=click.Choice(['anthropic', 'openai', 'ollama']), 
-              help='LLM provider')
-@click.option('--model', help='Model name')
-@click.option('--output', '-o', type=click.Path(), help='Output directory')
+              help='LLM provider (default: anthropic)')
+@click.option('--model', help='Model name (e.g., claude-3-haiku-20240307, gpt-4, llama2)')
+@click.option('--output', '-o', type=click.Path(), help='Output directory (default: ./docs/generated)')
 def generate(
     project_path: str,
     config: Optional[str],
@@ -37,7 +37,34 @@ def generate(
     model: Optional[str],
     output: Optional[str]
 ):
-    """Generate documentation for a project."""
+    """
+    Generate documentation for a project using LLMs.
+    
+    \b
+    Examples:
+      # Generate with Anthropic Claude (requires ANTHROPIC_API_KEY)
+      sourcescribe generate .
+      sourcescribe generate --provider anthropic --model claude-3-haiku-20240307
+      
+      # Generate with OpenAI (requires OPENAI_API_KEY)
+      sourcescribe generate --provider openai --model gpt-4
+      
+      # Generate with local Ollama (no API key needed)
+      sourcescribe generate --provider ollama --model llama2
+      
+      # Custom output directory
+      sourcescribe generate --output ./custom-docs
+      
+      # Using a config file
+      sourcescribe generate --config .sourcescribe.yaml
+    
+    \b
+    Required Environment Variables:
+      ANTHROPIC_API_KEY - For Anthropic Claude (get from https://console.anthropic.com)
+      OPENAI_API_KEY    - For OpenAI GPT (get from https://platform.openai.com)
+      
+    For Ollama, install from https://ollama.ai and run: ollama serve
+    """
     logger = get_logger()
     
     try:

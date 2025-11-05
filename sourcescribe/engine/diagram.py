@@ -45,13 +45,16 @@ class DiagramGenerator:
             ""
         ]
         
-        # Add modules as nodes
+        # Add modules as nodes with grouping by directory/package
         for i, module in enumerate(modules):
             node_id = f"M{i}"
             module_name = module.get('name', f'Module{i}')
             lines.append(f"    {node_id}[{module_name}]")
         
+        lines.append("")  # Blank line for readability
+        
         # Add relationships if available
+        edges_added = 0
         for i, module in enumerate(modules):
             deps = module.get('dependencies', [])
             for dep in deps:
@@ -59,6 +62,11 @@ class DiagramGenerator:
                 for j, other in enumerate(modules):
                     if other.get('name') == dep:
                         lines.append(f"    M{i} --> M{j}")
+                        edges_added += 1
+        
+        # Add note if no relationships found
+        if edges_added == 0:
+            lines.append("    %% Note: No internal dependencies detected")
         
         lines.append("```")
         return "\n".join(lines)

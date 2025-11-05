@@ -7,12 +7,13 @@ from sourcescribe.api.base import BaseLLMProvider, LLMMessage
 from sourcescribe.api.factory import LLMProviderFactory
 from sourcescribe.engine.analyzer import CodeAnalyzer
 from sourcescribe.engine.diagram import DiagramGenerator
+from sourcescribe.engine.feature_generator import FeatureDocumentationMixin
 from sourcescribe.config.models import SourceScribeConfig
 from sourcescribe.utils.file_utils import find_files, write_file, create_directory, get_relative_path
 from sourcescribe.utils.logger import get_logger
 
 
-class DocumentationGenerator:
+class DocumentationGenerator(FeatureDocumentationMixin):
     """Main documentation generation engine."""
     
     def __init__(self, config: SourceScribeConfig):
@@ -34,13 +35,13 @@ class DocumentationGenerator:
         incremental: bool = False
     ) -> None:
         """
-        Generate documentation for the repository.
+        Generate feature-based documentation for the repository.
         
         Args:
             files: Optional list of specific files to document
             incremental: If True, only update changed files
         """
-        self.logger.info("Starting documentation generation")
+        self.logger.info("Starting feature-based documentation generation")
         
         # Find files to document
         if files is None:
@@ -52,7 +53,7 @@ class DocumentationGenerator:
                 follow_symlinks=self.config.repository.follow_symlinks,
             )
         
-        self.logger.info(f"Found {len(files)} file(s) to document")
+        self.logger.info(f"Found {len(files)} file(s) to analyze")
         
         if not files:
             self.logger.warning("No files found to document")
@@ -62,21 +63,22 @@ class DocumentationGenerator:
         analyses = self.analyzer.analyze_files(files)
         self.logger.info(f"Analyzed {len(analyses)} file(s)")
         
-        # Generate documentation
-        self._generate_overview(analyses)
-        self._generate_file_docs(analyses)
+        # Generate process-oriented documentation structure
+        self._generate_overview_section(analyses)
+        self._generate_getting_started_section(analyses)
+        self._generate_feature_sections(analyses)
         
         if self.config.style.include_architecture:
-            self._generate_architecture_docs(analyses)
+            self._generate_architecture_section(analyses)
         
         if self.config.style.include_api_docs:
-            self._generate_api_docs(analyses)
+            self._generate_api_reference_section(analyses)
         
         # Create index
         if self.config.output.create_index:
-            self._generate_index(analyses)
+            self._generate_feature_index(analyses)
         
-        self.logger.info("Documentation generation completed")
+        self.logger.info("Feature-based documentation generation completed")
     
     def _generate_overview(self, analyses: List[Dict[str, Any]]) -> None:
         """Generate project overview documentation."""
@@ -342,17 +344,35 @@ Module: {mod['name']}
         """Get system prompt for LLM."""
         verbosity = self.config.style.verbosity
         
-        return f"""You are a technical documentation expert. Generate clear, comprehensive, 
-and well-structured documentation for software projects.
+        return f"""You are an expert technical documentation writer who specializes in creating 
+user-centric, process-oriented documentation with extensive visual diagrams.
 
 Documentation Style: {verbosity}
-- Use Markdown formatting
-- Be precise and technical
-- Include code examples when relevant
-- Organize content with clear headings
-- Focus on practical information developers need
 
-Write in a professional but accessible tone."""
+Key Principles:
+- **Feature-Focused**: Organize by features/capabilities, not file structure
+- **Visual First**: Use mermaid diagrams extensively (sequence, flowchart, class, state)
+- **Process-Oriented**: Explain workflows and how things work together
+- **User-Centric**: Write for developers who want to USE the system, not just understand the code
+- **Progressive Disclosure**: Start high-level, then dive deeper
+
+Formatting Guidelines:
+- Use clear Markdown with proper heading hierarchy
+- Include mermaid diagrams in every major section (minimum 1-2 per document)
+- Provide practical code examples
+- Use tables for configuration options
+- Include "How it Works" sections with sequence diagrams
+- Add "Common Use Cases" with examples
+
+Diagram Usage:
+- Sequence diagrams for workflows and interactions
+- Flowcharts for decision trees and processes
+- Component/graph diagrams for architecture
+- Class diagrams for data models (when applicable)
+- State diagrams for stateful behavior
+
+Write in a professional, clear, and accessible tone. Assume the reader wants to understand 
+how to USE the system, not browse through individual source files."""
     
     def _get_output_path_for_file(self, relative_path: str, relative: bool = False) -> str:
         """Get output path for a documented file."""

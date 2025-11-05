@@ -28,7 +28,7 @@ class AnthropicProvider(BaseLLMProvider):
         
         # Set default model if not provided
         if not self.model:
-            self.model = "claude-3-5-sonnet-20241022"
+            self.model = "claude-3-haiku-20240307"
     
     def generate(
         self,
