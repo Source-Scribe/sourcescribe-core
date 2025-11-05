@@ -2,81 +2,109 @@
 
 # SourceScribe Quick Start Guide
 
-Welcome to the SourceScribe Quick Start Guide! This guide will walk you through the minimal setup to get started, a simple "Hello World" example, and an explanation of what's happening under the hood. Let's dive in!
-
 ## First Steps
 
-To get started with SourceScribe, you'll need to install the package and set up your configuration. Here's how:
+To get started with SourceScribe, you'll need to install the package and set up your configuration.
 
 1. **Install SourceScribe**:
    ```
    pip install sourcescribe
    ```
 
-2. **Configure SourceScribe**:
-   - Create a new file named `sourcescribe.yml` in your project's root directory.
-   - Add the following configuration:
-     ```yaml
-     api_provider: openai
-     api_key: your_openai_api_key_here
-     ```
-   - Replace `your_openai_api_key_here` with your actual OpenAI API key.
+2. **Create a configuration file**:
+   Create a new file named `sourcescribe.yml` in your project directory with the following contents:
 
-That's it! You're now ready to start using SourceScribe.
+   ```yaml
+   providers:
+     openai:
+       api_key: your_openai_api_key
+     anthropic:
+       api_key: your_anthropic_api_key
+   ```
+
+   Replace `your_openai_api_key` and `your_anthropic_api_key` with your actual API keys.
+
+3. **Run SourceScribe**:
+   ```
+   sourcescribe generate
+   ```
+
+   This will generate documentation for your project based on the configuration.
 
 ## Hello World Example
 
-Let's try a simple example to get a feel for how SourceScribe works. Create a new Python file in your project, e.g., `example.py`, and add the following code:
+Let's walk through a simple example of using SourceScribe to generate documentation for a Python project.
 
-```python
-from sourcescribe.cli import generate_documentation
+1. **Create a sample Python file**:
+   Create a new file named `example.py` with the following content:
 
-if __name__ == "__main__":
-    generate_documentation("sourcescribe/")
-```
+   ```python
+   """
+   This is a simple example module.
+   """
 
-Now, run the script:
+   def greet(name):
+       """
+       Greets the given name.
 
-```
-python example.py
-```
+       Args:
+           name (str): The name to greet.
 
-SourceScribe will analyze the `sourcescribe/` directory and generate documentation for the project.
+       Returns:
+           str: The greeting message.
+       """
+       return f"Hello, {name}!"
+
+   if __name__ == "__main__":
+       print(greet("World"))
+   ```
+
+2. **Run SourceScribe**:
+   ```
+   sourcescribe generate
+   ```
+
+   This will generate the documentation for your project, including the `example.py` file.
 
 ## What Just Happened?
 
-When you ran the `example.py` script, here's what happened:
+When you ran `sourcescribe generate`, SourceScribe performed the following steps:
 
 ```mermaid
 sequenceDiagram
     participant User
     participant SourceScribe
-    participant OpenAI
+    participant ConfigLoader
+    participant FileWatcher
+    participant FeatureGenerator
+    participant Analyzer
+    participant Diagram
+    participant Generator
 
-    User->>SourceScribe: generate_documentation("sourcescribe/")
-    SourceScribe->>SourceScribe: Analyze source code
-    SourceScribe->>OpenAI: Generate documentation
-    OpenAI->>SourceScribe: Provide generated documentation
-    SourceScribe->>User: Display generated documentation
+    User->>SourceScribe: sourcescribe generate
+    SourceScribe->>ConfigLoader: Load configuration
+    ConfigLoader->>SourceScribe: Configuration
+    SourceScribe->>FileWatcher: Watch project files
+    FileWatcher->>FeatureGenerator: Analyze files
+    FeatureGenerator->>Analyzer: Extract features
+    Analyzer->>Diagram: Generate diagrams
+    Analyzer->>Generator: Generate documentation
+    Generator->>User: Output documentation
 ```
 
-1. The `generate_documentation()` function was called, passing the `"sourcescribe/"` directory as the argument.
-2. SourceScribe analyzed the source code in the `sourcescribe/` directory, extracting relevant information about the project.
-3. SourceScribe then used the OpenAI API to generate the documentation based on the extracted information.
-4. The generated documentation was returned to SourceScribe and displayed to the user.
-
-The generated documentation includes an overview of the project, a breakdown of the file structure, and detailed explanations of the various components and their interactions.
+1. The `ConfigLoader` loaded the `sourcescribe.yml` configuration file, which specifies the API keys for the AI providers.
+2. The `FileWatcher` monitored the project files for changes.
+3. The `FeatureGenerator` analyzed the project files and extracted relevant information.
+4. The `Analyzer` used the extracted features to generate diagrams and documentation content.
+5. The `Generator` combined the diagrams and documentation content and output the final documentation.
 
 ## Next Steps
 
 Now that you've seen a simple example, here are some next steps you can take:
 
-1. **Explore the Configuration Options**: SourceScribe supports various configuration options, such as selecting different API providers, customizing the documentation generation, and more. Check out the [SourceScribe Documentation](https://sourcescribe.readthedocs.io) to learn about the available options.
+1. **Customize the Configuration**: Explore the available configuration options to tailor SourceScribe to your project's needs, such as excluding certain files or directories, or specifying additional providers.
+2. **Explore the Generated Documentation**: Review the generated documentation to see how SourceScribe has documented your project. Provide feedback and suggestions for improvement.
+3. **Integrate SourceScribe into Your Workflow**: Consider adding SourceScribe to your project's build or deployment process to automatically generate up-to-date documentation.
+4. **Contribute to SourceScribe**: If you encounter any issues or have ideas for new features, consider contributing to the SourceScribe project on GitHub.
 
-2. **Integrate SourceScribe into Your Workflow**: Consider adding SourceScribe to your project's build or deployment process to automatically generate up-to-date documentation as your codebase evolves.
-
-3. **Customize the Documentation Generation**: SourceScribe provides a flexible and extensible architecture, allowing you to customize the documentation generation process to fit your specific needs. Explore the [SourceScribe Documentation](https://sourcescribe.readthedocs.io) to learn more.
-
-4. **Contribute to SourceScribe**: If you encounter any issues or have ideas for improvements, consider contributing to the SourceScribe project on [GitHub](https://github.com/sourcescribe/sourcescribe). Your feedback and contributions are valuable for making SourceScribe even better.
-
-Happy documenting with SourceScribe!
+By following these steps, you can get the most out of SourceScribe and streamline the documentation process for your Python projects.

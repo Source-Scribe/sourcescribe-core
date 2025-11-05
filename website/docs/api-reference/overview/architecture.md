@@ -4,7 +4,7 @@
 
 ## High-Level Architecture
 
-The system is composed of several key modules that work together to provide a comprehensive solution. The high-level architecture can be described as follows:
+The system is composed of several key modules that work together to provide a comprehensive solution. The high-level architecture can be visualized as follows:
 
 ```mermaid
 graph LR
@@ -12,37 +12,38 @@ graph LR
     factory --> providers[Providers]
     providers --> models
     models --> analyzer
+    analyzer --> diagram
     analyzer --> generator
-    generator --> diagram
-    diagram --> cli
+    generator --> file_utils
+    watcher --> handler
+    handler --> logger
 ```
 
-The main flow starts with the **CLI** module, which serves as the entry point for users. The CLI interacts with the **Factory** module to create the appropriate provider based on user input. The selected **Provider** then processes the user's request and generates the necessary data models.
+The main components and their roles are:
 
-These data models are then passed to the **Analyzer** module, which examines the models and extracts relevant information. The **Generator** module then uses this analyzed data to generate the final output, which is then visualized by the **Diagram** module and presented back to the user through the CLI.
-
-The system also includes several utility modules, such as **Loader**, **File Utils**, and **Logger**, which provide supporting functionality across the different components.
-
-## Key Components
-
-1. **CLI (Command-Line Interface)**: Handles user input and interacts with the system's core functionality.
-2. **Factory**: Responsible for creating the appropriate provider based on user input.
-3. **Providers**: Implement the logic to interact with external services, such as Anthropic, OpenAI, and OLLaMA.
-4. **Models**: Define the data structures used throughout the system.
-5. **Analyzer**: Examines the data models and extracts relevant information.
-6. **Generator**: Uses the analyzed data to generate the final output.
-7. **Diagram**: Visualizes the generated output and presents it to the user.
+- **CLI**: Provides the command-line interface for users to interact with the system.
+- **Factory**: Responsible for creating and managing the different provider instances (Anthropic, OpenAI, OLLama).
+- **Providers**: Implement the logic to communicate with the various AI language models (Anthropic, OpenAI, OLLama).
+- **Models**: Define the data structures and schemas used throughout the system.
+- **Analyzer**: Analyzes the input files and extracts relevant information.
+- **Diagram**: Generates visual diagrams (e.g., sequence diagrams, flowcharts) based on the analyzed data.
+- **Generator**: Generates the final output files based on the analyzed data.
+- **File Utils**: Provides utility functions for file and directory operations.
+- **Watcher**: Monitors the file system for changes and triggers the appropriate actions.
+- **Handler**: Handles file-related events and coordinates the processing of changes.
+- **Logger**: Provides logging functionality for the system.
 
 ## Data Flow
 
 The typical data flow in the system is as follows:
 
-1. The user interacts with the CLI, providing the necessary input.
-2. The CLI passes the user input to the Factory, which creates the appropriate provider.
-3. The provider processes the user's request and generates the necessary data models.
-4. The data models are passed to the Analyzer, which examines them and extracts relevant information.
-5. The Analyzer's output is then passed to the Generator, which uses it to generate the final output.
-6. The generated output is sent to the Diagram module, which visualizes it and presents it to the user through the CLI.
+1. The user interacts with the CLI, providing input files or commands.
+2. The CLI module passes the user's input to the Factory, which creates the appropriate provider instances.
+3. The provider instances communicate with the external AI language models to obtain the necessary information.
+4. The provider responses are then passed to the Models module, which handles the data structures.
+5. The Analyzer module processes the input files and extracts relevant information, such as code structure, dependencies, and documentation.
+6. The extracted data is then used by the Diagram and Generator modules to generate the final output, which may include visual diagrams and documentation.
+7. The Watcher and Handler modules monitor the file system for changes and trigger the appropriate processing steps.
 
 ```mermaid
 sequenceDiagram
@@ -52,31 +53,33 @@ sequenceDiagram
     participant Providers
     participant Models
     participant Analyzer
-    participant Generator
     participant Diagram
+    participant Generator
+    participant FileUtils
 
-    User->>CLI: Provide input
-    CLI->>Factory: Create provider
-    Factory->>Providers: Process request
-    Providers->>Models: Generate data models
-    Models->>Analyzer: Analyze data models
-    Analyzer->>Generator: Generate output
-    Generator->>Diagram: Visualize output
-    Diagram->>CLI: Present output to user
-    CLI->>User: Display result
+    User->>CLI: Provide input files/commands
+    CLI->>Factory: Pass user input
+    Factory->>Providers: Create provider instances
+    Providers->>Models: Provide data
+    Analyzer->>Models: Process input files
+    Analyzer->>Diagram: Generate diagrams
+    Analyzer->>Generator: Generate documentation
+    Generator->>FileUtils: Write output files
+    Watcher->>Handler: Monitor file changes
+    Handler->>Analyzer: Trigger re-analysis
 ```
 
 ## Design Principles
 
-The system's architecture follows several key design principles:
+The system architecture follows several key design principles:
 
-1. **Modularity**: The system is divided into well-defined modules, each with a specific responsibility. This promotes maintainability, testability, and flexibility.
-2. **Abstraction**: The use of abstract base classes and interfaces in the **base** module allows for easy substitution of different provider implementations.
-3. **Separation of Concerns**: The clear separation of concerns between the CLI, Factory, Providers, Analyzer, Generator, and Diagram modules ensures that each component focuses on its specific task.
-4. **Dependency Injection**: The Factory module is responsible for creating the appropriate provider, which promotes loose coupling and testability.
-5. **Single Responsibility Principle**: Each module and class in the system has a single, well-defined responsibility, making the codebase easier to understand and maintain.
+1. **Modularity**: The system is divided into well-defined, loosely coupled modules, each with a specific responsibility. This promotes maintainability, testability, and flexibility.
+2. **Abstraction**: The use of abstract base classes and interfaces in the `base` module allows for easy substitution of different provider implementations, following the Dependency Inversion Principle.
+3. **Separation of Concerns**: The clear separation of concerns, such as data modeling, file processing, and output generation, helps to keep the codebase organized and easier to understand.
+4. **Extensibility**: The system is designed to be easily extensible, allowing for the addition of new providers, data models, and processing capabilities without requiring significant changes to the existing codebase.
+5. **Configuration-Driven**: The use of configuration files and the `loader` module allows for easy customization of the system's behavior, making it more adaptable to different use cases.
 
-These design principles contribute to the overall robustness, scalability, and extensibility of the system.
+These design principles contribute to the overall robustness, maintainability, and scalability of the system architecture.
 
 ## System Architecture Diagram
 
@@ -111,18 +114,18 @@ graph TD
     M23[test_parser]
 
     M2 --> M3
-    M4 --> M3
+    M4 --> M2
     M4 --> M9
     M4 --> M6
+    M4 --> M3
     M4 --> M5
-    M4 --> M2
     M5 --> M3
     M6 --> M3
-    M7 --> M9
-    M7 --> M8
-    M7 --> M15
-    M7 --> M18
     M7 --> M13
+    M7 --> M18
+    M7 --> M9
+    M7 --> M15
+    M7 --> M8
     M8 --> M9
     M10 --> M9
     M10 --> M16
@@ -130,14 +133,14 @@ graph TD
     M10 --> M14
     M12 --> M3
     M12 --> M14
-    M13 --> M10
-    M13 --> M12
-    M13 --> M3
     M13 --> M9
     M13 --> M4
-    M13 --> M11
-    M13 --> M15
+    M13 --> M3
     M13 --> M14
+    M13 --> M15
+    M13 --> M10
+    M13 --> M11
+    M13 --> M12
     M17 --> M15
     M18 --> M17
     M18 --> M9
