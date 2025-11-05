@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "sourcescribe"
-version = "0.1.0"
+version = "1.0.0"
 description = "Auto-documentation engine using LLMs to generate insightful documentation with architecture diagrams"
 readme = "README.md"
 requires-python = ">=3.7"
@@ -14,7 +14,7 @@ authors = [
 ]
 keywords = ["documentation", "llm", "code-analysis", "mermaid", "auto-doc"]
 classifiers = [
-    "Development Status :: 3 - Alpha",
+    "Development Status :: 5 - Production/Stable",
     "Intended Audience :: Developers",
     "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3",
@@ -24,6 +24,9 @@ classifiers = [
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Documentation",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Operating System :: OS Independent",
 ]
 
 dependencies = [
@@ -56,9 +59,9 @@ dev = [
 sourcescribe = "sourcescribe.cli:main"
 
 [project.urls]
-Homepage = "https://github.com/yourusername/sourcescribe"
-Documentation = "https://github.com/yourusername/sourcescribe/docs"
-Repository = "https://github.com/yourusername/sourcescribe"
+Homepage = "https://github.com/Source-Scribe/sourcescribe-core"
+Documentation = "http://sourcescribe.ai"
+Repository = "https://github.com/Source-Scribe/sourcescribe-core"
 
 [tool.setuptools.packages.find]
 where = ["."]
