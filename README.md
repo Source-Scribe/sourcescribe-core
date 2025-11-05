@@ -351,6 +351,27 @@ Documentation Home
 
 All Mermaid diagrams render beautifully with zoom support!
 
+### GitHub Pages Deployment
+
+To deploy your documentation to GitHub Pages:
+
+1. **Enable GitHub Pages** in your repository settings:
+   - Go to Settings → Pages
+   - Source: Deploy from a branch
+   - Branch: `gh-pages` / `(root)`
+
+2. **Repository Requirements**:
+   - ✅ **Public repositories**: GitHub Pages is available by default
+   - ⚠️ **Private repositories**: Requires GitHub Pro, Team, or Enterprise plan
+   
+   > **Note:** If your repository is private and you're on the Free plan, you'll need to either:
+   > - Make your repository public, OR
+   > - Upgrade to GitHub Pro/Team/Enterprise to enable Pages for private repos
+
+3. **Automatic Deployment**:
+   - Once enabled, the `.github/workflows/build-docs.yml` workflow will automatically deploy on every push to `main`
+   - Your site will be available at: `https://[username].github.io/[repo-name]/`
+
 ## Development
 
 ```bash
