@@ -36,11 +36,14 @@ Powered by LLMs (Claude, OpenAI, Ollama) and designed for developers who want do
 - 📊 **Diagram-Rich**: Generates 10+ Mermaid diagrams (sequence, flowchart, architecture, class)
 - 🔄 **Process-Oriented**: Explains "How it Works" with visual workflows
 - 🚀 **User-Centric**: Written for developers who want to USE the system
+- 🔗 **GitHub Permalinks**: Automatically links to actual code with line-level precision
+- ✨ **Auto-Sidebar Generation**: Automatically generates Docusaurus `sidebars.ts` - no manual config!
 - 🤖 **Multi-LLM Support**: Claude (Anthropic), OpenAI (GPT-4), and Ollama
 - 👁️ **Real-time Watching**: Monitors code changes and auto-regenerates docs
 - 🌐 **Multi-language**: Supports Python, TypeScript, Java, Go, Rust, and more
 - ⚙️ **Configurable**: Flexible YAML-based configuration with Pydantic models
 - 🔄 **Cross-platform**: Works on macOS, Linux, and Windows
+- 🚢 **GitHub Actions Ready**: Works seamlessly in any project's CI/CD pipeline
 
 ## Installation
 
@@ -322,17 +325,31 @@ Shows the full system architecture with module dependencies and data flow.
 
 ## 🎨 Integration with Docusaurus
 
-SourceScribe works seamlessly with Docusaurus:
+SourceScribe works seamlessly with Docusaurus and **automatically generates** the sidebar configuration!
 
 ```bash
 # Generate docs for Docusaurus
 sourcescribe generate . --output ./website/docs/api-reference
 
-# Update sidebars.ts to include the new structure
+# Sidebar is auto-generated! Just build and start
 cd website && npm start
 ```
 
-Your Docusaurus sidebar will show:
+### ✨ Auto-Generated Configuration
+
+SourceScribe automatically configures Docusaurus based on your GitHub repository:
+
+**1. Sidebar Generation** - Creates `sidebars.ts` matching your docs structure
+**2. Config Update** - Updates `docusaurus.config.ts` with your GitHub org/repo
+
+**What Gets Updated:**
+```typescript
+// docusaurus.config.ts
+organizationName: 'Source-Scribe',  // Auto-detected from GitHub URL
+projectName: 'sourcescribe-core',    // Auto-detected from GitHub URL
+```
+
+**Your Docusaurus sidebar will show:**
 ```
 Documentation Home
 ├─ Overview
@@ -350,6 +367,34 @@ Documentation Home
 ```
 
 All Mermaid diagrams render beautifully with zoom support!
+
+### 🚀 Use in Other Projects
+
+SourceScribe works in **any project's GitHub Actions**! See [GITHUB_ACTIONS_SETUP.md](./GITHUB_ACTIONS_SETUP.md) for complete setup guide.
+
+**Quick Example:**
+```yaml
+# .github/workflows/docs.yml
+- name: Install SourceScribe
+  run: pip install sourcescribe
+
+- name: Generate Documentation
+  env:
+    ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+  run: |
+    sourcescribe generate . \
+      --output ./website/docs/api-reference \
+      --provider anthropic \
+      --model claude-3-haiku-20240307
+```
+
+**What Gets Auto-Generated:**
+- ✅ Feature-based documentation structure
+- ✅ 10+ Mermaid diagrams
+- ✅ Docusaurus `sidebars.ts` (automatic!)
+- ✅ Docusaurus config updated (organizationName, projectName)
+- ✅ GitHub permalinks to actual code
+- ✅ Navigation README
 
 ### GitHub Pages Deployment
 

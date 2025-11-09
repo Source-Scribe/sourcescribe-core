@@ -11,6 +11,7 @@ from sourcescribe.engine.feature_generator import FeatureDocumentationMixin
 from sourcescribe.config.models import SourceScribeConfig
 from sourcescribe.utils.file_utils import find_files, write_file, create_directory, get_relative_path
 from sourcescribe.utils.logger import get_logger
+from sourcescribe.utils.github_utils import get_github_url_from_git, format_github_link_markdown
 
 
 class DocumentationGenerator(FeatureDocumentationMixin):
@@ -28,6 +29,15 @@ class DocumentationGenerator(FeatureDocumentationMixin):
         self.analyzer = CodeAnalyzer(config.repository)
         self.diagram_generator = DiagramGenerator()
         self.logger = get_logger(__name__)
+        
+        # Auto-detect GitHub URL if not configured
+        self.github_url = config.repository.github_url
+        if not self.github_url:
+            self.github_url = get_github_url_from_git(config.repository.path)
+            if self.github_url:
+                self.logger.info(f"Auto-detected GitHub URL: {self.github_url}")
+        
+        self.github_branch = config.repository.default_branch
     
     def generate_documentation(
         self,
@@ -77,6 +87,12 @@ class DocumentationGenerator(FeatureDocumentationMixin):
         # Create index
         if self.config.output.create_index:
             self._generate_feature_index(analyses)
+        
+        # Generate Docusaurus sidebar if output path suggests Docusaurus structure
+        self._generate_docusaurus_sidebar(analyses)
+        
+        # Update Docusaurus config with GitHub repository information
+        self._update_docusaurus_config(analyses)
         
         self.logger.info("Feature-based documentation generation completed")
     
@@ -304,18 +320,32 @@ Generated on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
             lang = a.get('language', 'unknown')
             languages[lang] = languages.get(lang, 0) + 1
         
+        github_info = ""
+        if self.github_url:
+            github_info = f"\n- GitHub Repository: {self.github_url}\n- Branch: {self.github_branch}\n"
+        
         context = f"""Project Statistics:
 - Files: {total_files}
 - Total Lines: {total_lines}
-- Languages: {', '.join(f'{k} ({v})' for k, v in languages.items())}
+- Languages: {', '.join(f'{k} ({v})' for k, v in languages.items())}{github_info}
 
-File Structure:
+File Structure (with GitHub links):
 """
         
         for analysis in analyses[:30]:  # Limit for context
             path = analysis.get('path', '')
             relative = get_relative_path(path, self.config.repository.path)
-            context += f"- {relative} ({analysis.get('language', 'unknown')})\n"
+            
+            if self.github_url:
+                github_link = format_github_link_markdown(
+                    relative,
+                    self.github_url,
+                    self.github_branch,
+                    link_text=relative
+                )
+                context += f"- {github_link} ({analysis.get('language', 'unknown')})\n"
+            else:
+                context += f"- {relative} ({analysis.get('language', 'unknown')})\n"
         
         return context
     
@@ -323,8 +353,17 @@ File Structure:
         """Format modules for LLM prompt."""
         lines = []
         for mod in modules[:20]:  # Limit for context
+            module_name = mod['name']
+            module_path = mod.get('path', '')
+            
+            # Add GitHub link if available
+            github_link = ""
+            if self.github_url and module_path:
+                relative_path = get_relative_path(module_path, self.config.repository.path)
+                github_link = f"\n- GitHub: {self.github_url}/blob/{self.github_branch}/{relative_path}"
+            
             lines.append(f"""
-Module: {mod['name']}
+Module: {module_name}{github_link}
 - Language: {mod['language']}
 - Lines: {mod['lines']}
 - Classes: {mod['num_classes']}
@@ -344,6 +383,18 @@ Module: {mod['name']}
         """Get system prompt for LLM."""
         verbosity = self.config.style.verbosity
         
+        github_instruction = ""
+        if self.github_url:
+            github_instruction = f"""
+GitHub Links:
+- **IMPORTANT**: When referencing specific code, configuration, or implementation details, always include GitHub permalinks
+- Use this format: [description]({{github_permalink}})
+- Example: "See the [configuration model]({self.github_url}/blob/{self.github_branch}/path/to/file.py#L10-L25)"
+- Link to specific line ranges when referencing code blocks
+- Link to files when discussing modules or components
+- This makes documentation more useful and navigable
+"""
+        
         return f"""You are an expert technical documentation writer who specializes in creating 
 user-centric, process-oriented documentation with extensive visual diagrams.
 
@@ -355,14 +406,16 @@ Key Principles:
 - **Process-Oriented**: Explain workflows and how things work together
 - **User-Centric**: Write for developers who want to USE the system, not just understand the code
 - **Progressive Disclosure**: Start high-level, then dive deeper
+- **Link to Source**: Reference actual code with GitHub permalinks{github_instruction}
 
 Formatting Guidelines:
 - Use clear Markdown with proper heading hierarchy
 - Include mermaid diagrams in every major section (minimum 1-2 per document)
-- Provide practical code examples
+- Provide practical code examples with GitHub links to the actual code
 - Use tables for configuration options
 - Include "How it Works" sections with sequence diagrams
 - Add "Common Use Cases" with examples
+- Link to source code files and specific lines when mentioning implementation details
 
 Diagram Usage:
 - Sequence diagrams for workflows and interactions

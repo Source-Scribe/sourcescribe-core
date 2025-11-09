@@ -13,6 +13,10 @@ llm:
 # Repository Settings
 repository:
   path: "."
+  # GitHub URL for generating code permalinks in documentation
+  # Auto-detected from git remote if not specified
+  github_url: "https://github.com/Source-Scribe/sourcescribe-core"  # Optional
+  default_branch: "main"  # Default branch for GitHub links
   exclude_patterns:
     - "*.pyc"
     - "__pycache__"

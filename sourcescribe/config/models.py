@@ -48,6 +48,8 @@ class LLMConfig(BaseModel):
 class RepositoryConfig(BaseModel):
     """Repository scanning configuration."""
     path: str = Field(default=".", description="Repository root path")
+    github_url: Optional[str] = Field(default=None, description="GitHub repository URL (e.g., https://github.com/user/repo)")
+    default_branch: str = Field(default="main", description="Default branch for GitHub links")
     exclude_patterns: List[str] = Field(
         default_factory=lambda: [
             "*.pyc", "__pycache__", "*/__pycache__/*", 
