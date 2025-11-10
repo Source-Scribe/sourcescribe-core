@@ -342,29 +342,29 @@ Welcome to the documentation! This documentation is organized by features and wo
 
 ## 📚 Documentation Structure
 
-### [Overview](./overview/index.md)
+### [Overview](./overview/)
 High-level understanding of the project
-- **[Project Overview](./overview/index.md)** - What this project does and why
-- **[Architecture Overview](./overview/architecture.md)** - How the system works
-- **[Technology Stack](./overview/technology-stack.md)** - Technologies used
+- **[Project Overview](./overview/)** - What this project does and why
+- **[Architecture Overview](./overview/architecture)** - How the system works
+- **[Technology Stack](./overview/technology-stack)** - Technologies used
 
-### [Getting Started](./getting-started/installation.md)
+### [Getting Started](./getting-started/installation)
 Everything you need to begin using the project
-- **[Installation](./getting-started/installation.md)** - Set up the project
-- **[Quick Start](./getting-started/quick-start.md)** - Get up and running in minutes
-- **[Configuration](./getting-started/configuration.md)** - Configure for your needs
+- **[Installation](./getting-started/installation)** - Set up the project
+- **[Quick Start](./getting-started/quick-start)** - Get up and running in minutes
+- **[Configuration](./getting-started/configuration)** - Configure for your needs
 
-### [Features](./features/index.md)
+### [Features](./features/)
 Detailed documentation of each major feature and capability
 
-### [Architecture](./architecture/components.md)
+### [Architecture](./architecture/components)
 Deep dive into system design, components, and patterns
 
 ## 🚀 Quick Links
 
-- **First time here?** Start with [Getting Started → Installation](./getting-started/installation.md)
-- **Want to understand the system?** Read [Overview → Architecture](./overview/architecture.md)
-- **Looking for specific functionality?** Browse [Features](./features/index.md)
+- **First time here?** Start with [Getting Started → Installation](./getting-started/installation)
+- **Want to understand the system?** Read [Overview → Architecture](./overview/architecture)
+- **Looking for specific functionality?** Browse [Features](./features/)
 
 ## 💡 Documentation Philosophy
 
@@ -855,7 +855,7 @@ const config: Config = {{
             }},
             {{
               label: 'Overview',
-              to: '/docs/overview/index',
+              to: '/docs/overview',
             }},
           ],
         }},
