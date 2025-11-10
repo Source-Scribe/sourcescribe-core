@@ -454,6 +454,13 @@ Format Guidelines:
 - Include "Common Use Cases" with examples
 - Include a "Notes" section at the end for additional context or caveats
 
+CRITICAL MDX Compatibility Rules:
+- NEVER put code blocks (triple backticks) inside table cells
+- For code in tables, use inline code with backticks or reference "See example below"
+- If you need to show code examples, place them AFTER the table, not inside cells
+- Invalid: | Config | `​``javascript\\ncode\\n`​`` | ❌
+- Valid: | Config | `inline code` or "See below" | ✅
+
 Write directly about what the system does and how to use it. Be clear, professional, practical, and concise."""
     
     def _get_output_path_for_file(self, relative_path: str, relative: bool = False) -> str:

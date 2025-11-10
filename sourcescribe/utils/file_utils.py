@@ -83,6 +83,27 @@ def sanitize_mdx_content(content: str) -> str:
     """
     import re
     
+    # First, fix code blocks inside table cells (invalid MDX syntax)
+    # Replace triple backtick code blocks in tables with inline code or escaped text
+    def fix_table_code_blocks(match):
+        table_content = match.group(0)
+        # Replace code blocks with "See code example below table" message
+        if '```' in table_content:
+            # Replace code blocks with inline code representation
+            table_content = re.sub(
+                r'```[a-z]*\n([\s\S]*?)\n```',
+                lambda m: '`' + m.group(1).replace('\n', ' ').replace('|', '\\|')[:50] + '...`',
+                table_content
+            )
+        return table_content
+    
+    # Match markdown tables (lines starting with |)
+    content = re.sub(
+        r'(\|[^\n]+\|[\s\S]*?)(?=\n\n|\n#|\Z)',
+        fix_table_code_blocks,
+        content
+    )
+    
     # Split content by code blocks to avoid modifying code
     parts = re.split(r'(```[\s\S]*?```|`[^`]+`)', content)
     
