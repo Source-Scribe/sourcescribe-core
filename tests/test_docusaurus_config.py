@@ -166,14 +166,15 @@ def test_generate_docusaurus_config_content():
     assert "Tutorial" not in config_content
     assert "/docs/intro" not in config_content
     
-    # Check docs-only mode (docs as homepage)
-    assert "routeBasePath: '/'" in config_content
+    # Check navbar has Documentation link
+    assert "label: 'Documentation'" in config_content
+    assert "type: 'docSidebar'" in config_content
     
-    # Check proper footer links (without /docs prefix since docs are at root)
+    # Check proper footer links
     assert "Getting Started" in config_content
-    assert "to: '/getting-started/installation'" in config_content
+    assert "to: '/docs/getting-started/installation'" in config_content
     assert "Overview" in config_content
-    assert "to: '/overview'" in config_content
+    assert "to: '/docs/overview'" in config_content
     
     # Check blog is disabled
     assert "blog: false" in config_content
