@@ -195,7 +195,7 @@ Format in Markdown with tables for options."""
         self.logger.info("Getting Started section completed")
     
     def _generate_feature_sections(self, analyses: List[Dict[str, Any]]) -> None:
-        """Generate feature-based documentation sections."""
+        """Generate feature-based documentation sections with comprehensive topic coverage."""
         self.logger.info("Generating feature sections")
         
         context = self._build_project_context(analyses)
@@ -204,40 +204,130 @@ Format in Markdown with tables for options."""
         features_dir = Path(self.config.output.path) / "features"
         create_directory(str(features_dir))
         
-        # Generate feature-oriented documentation
-        feature_docs_prompt = f"""Analyze this codebase and create feature-based documentation:
+        # Phase 1: Discover all topics in the codebase
+        discovery_prompt = f"""Analyze this codebase and identify ALL major topics that should be documented:
 
 {context}
 
-Organize the documentation by FEATURES/CAPABILITIES, not files. For example:
-- User Authentication & Authorization
-- Data Management  
-- API Integration
-- File Processing
-- Monitoring & Logging
+Identify topics by analyzing:
+- Core features and capabilities
+- Domain concepts and business logic  
+- Technical components and modules
+- Integration points and APIs
+- Data flows and processing pipelines
+- Configuration and setup requirements
 
-For each major feature area, create:
-1. **Feature Overview** - Purpose and capabilities
-2. **How It Works** - Process flow with mermaid flowchart or sequence diagram
-3. **Usage Examples** - Code examples showing how to use this feature
-4. **Configuration** - Feature-specific settings
-5. **Common Use Cases** - Real-world scenarios
+Output a JSON list of topics in this format:
+```json
+{{
+  "topics": [
+    {{"name": "Authentication", "filename": "authentication", "description": "User authentication and authorization"}},
+    {{"name": "Data Processing", "filename": "data-processing", "description": "How data is processed and transformed"}},
+    {{"name": "API Integration", "filename": "api-integration", "description": "External API connections and usage"}}
+  ]
+}}
+```
 
-Use mermaid diagrams extensively:
-- Sequence diagrams for workflows
-- Flowcharts for decision trees
-- State diagrams for stateful features
+Be comprehensive - identify 5-10 major topics that developers need to understand."""
 
-Format as a comprehensive Markdown document with clear sections for each feature."""
-
-        response = self.llm_provider.generate(
-            messages=[LLMMessage(role="user", content=feature_docs_prompt)],
+        discovery_response = self.llm_provider.generate(
+            messages=[LLMMessage(role="user", content=discovery_prompt)],
             system_prompt=system_prompt
         )
         
-        write_file(str(features_dir / "index.md"), f"# Features\n\n{response.content}", sanitize_mdx=True)
+        # Parse topics from response
+        topics = self._parse_topics_from_response(discovery_response.content)
+        self.logger.info(f"Discovered {len(topics)} topics to document")
+        
+        # Phase 2: Generate detailed documentation for each topic
+        for topic in topics:
+            topic_name = topic.get('name', 'Unknown')
+            filename = topic.get('filename', 'topic')
+            description = topic.get('description', '')
+            
+            self.logger.info(f"Generating documentation for: {topic_name}")
+            
+            topic_prompt = f"""Create comprehensive documentation for this topic: {topic_name}
+
+Context: {description}
+
+{context}
+
+STRUCTURE (following DeepWiki format):
+1. Start with 2-3 sentence summary of this topic
+2. Use ## for main sections and ### for subsections
+3. Keep paragraphs short (2-3 sentences) and focused
+4. Be concise - only include critical details
+
+Required sections:
+## Overview
+Brief explanation of what this topic covers and why it matters
+
+## How It Works  
+Detailed explanation with mermaid diagram (sequence/flowchart/state diagram as appropriate)
+
+## Key Components
+Main classes, functions, or modules involved (with GitHub links to source code)
+
+## Common Use Cases
+Practical examples with code snippets
+
+## Configuration
+Relevant settings, environment variables, or options (use tables)
+
+## Notes
+Additional context, caveats, or related topics
+
+Include mermaid diagrams and GitHub links throughout for citations."""
+
+            response = self.llm_provider.generate(
+                messages=[LLMMessage(role="user", content=topic_prompt)],
+                system_prompt=system_prompt
+            )
+            
+            write_file(str(features_dir / f"{filename}.md"), f"# {topic_name}\n\n{response.content}", sanitize_mdx=True)
+        
+        # Generate features index page
+        index_content = "# Features\n\n"
+        index_content += "This section covers all major features and capabilities of the system.\n\n"
+        index_content += "## Topics\n\n"
+        for topic in topics:
+            topic_name = topic.get('name', 'Unknown')
+            filename = topic.get('filename', 'topic')
+            description = topic.get('description', '')
+            index_content += f"- **[{topic_name}](./{filename})** - {description}\n"
+        
+        write_file(str(features_dir / "index.md"), index_content, sanitize_mdx=True)
         
         self.logger.info("Feature sections completed")
+    
+    def _parse_topics_from_response(self, response_content: str) -> List[Dict[str, str]]:
+        """Parse topics from LLM response, handling various formats."""
+        import json
+        import re
+        
+        try:
+            # Try to find JSON block in response
+            json_match = re.search(r'```json\s*(\{.*?\})\s*```', response_content, re.DOTALL)
+            if json_match:
+                data = json.loads(json_match.group(1))
+                if 'topics' in data:
+                    return data['topics']
+            
+            # Try parsing the whole response as JSON
+            data = json.loads(response_content)
+            if 'topics' in data:
+                return data['topics']
+        except (json.JSONDecodeError, AttributeError):
+            pass
+        
+        # Fallback: return default topics if parsing fails
+        self.logger.warning("Could not parse topics from LLM response, using defaults")
+        return [
+            {"name": "Core Features", "filename": "core-features", "description": "Main capabilities and features"},
+            {"name": "Architecture", "filename": "architecture-details", "description": "System design and components"},
+            {"name": "Usage Examples", "filename": "usage-examples", "description": "How to use the system"},
+        ]
     
     def _generate_architecture_section(self, analyses: List[Dict[str, Any]]) -> None:
         """Generate detailed architecture documentation."""

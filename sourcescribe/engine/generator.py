@@ -400,12 +400,27 @@ GitHub Links:
 
 Style: {verbosity}
 
-Content Structure:
+STRUCTURE REQUIREMENTS:
+1. Start with a brief summary (2-3 sentences) of overall purpose
+2. Use ## for main section headings and ### for subsections  
+3. Organize related information into logical groups under appropriate headings
+4. Keep paragraphs focused on a single topic and relatively short (2-3 sentences)
+5. Be extremely concise - include ONLY the most important details
+
+Content Organization:
 - Focus on features and capabilities, not individual files
 - Explain what the system does and how to use it
 - Show workflows and interactions between components
 - Start with high-level concepts, then provide details
-- Include practical code examples{github_instruction}
+- Use bullet points or numbered lists for multiple related items
+- Format code references with backticks (e.g., `functionName`)
+
+Code References:{github_instruction}
+- When discussing implementation details, ALWAYS link to the actual source code
+- Link to specific line ranges when referencing code blocks
+- Link to files when discussing modules or components
+- Use markdown links: [description](GitHub-URL)
+- This provides citations backing up your claims
 
 Visual Documentation:
 - Include mermaid diagrams in every major section (minimum 1-2 per document)
@@ -428,15 +443,15 @@ Mermaid Syntax (CRITICAL):
       API->>User: Return data
   ```
 
-Format:
+Format Guidelines:
 - Use clear Markdown with proper heading hierarchy
 - Provide practical code examples
 - Use tables for configuration options
 - Add "How it Works" sections with diagrams
 - Include "Common Use Cases" with examples
-- When discussing implementation details, link to the actual source code
+- Include a "Notes" section at the end for additional context or caveats
 
-Write directly about what the system does and how to use it. Be clear, professional, and practical."""
+Write directly about what the system does and how to use it. Be clear, professional, practical, and concise."""
     
     def _get_output_path_for_file(self, relative_path: str, relative: bool = False) -> str:
         """Get output path for a documented file."""
