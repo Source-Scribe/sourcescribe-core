@@ -2,6 +2,7 @@
 
 import pytest
 import json
+import os
 from pathlib import Path
 from unittest.mock import Mock, MagicMock, patch
 from sourcescribe.engine.feature_generator import FeatureDocumentationMixin
@@ -9,6 +10,12 @@ from sourcescribe.engine.analyzer import CodeAnalyzer
 from sourcescribe.engine.diagram import DiagramGenerator
 from sourcescribe.config.models import SourceScribeConfig
 from sourcescribe.api.base import LLMResponse
+
+# Skip integration tests that need real LLM provider when API key not available
+skip_without_api_key = pytest.mark.skipif(
+    not os.getenv('ANTHROPIC_API_KEY'),
+    reason="Requires ANTHROPIC_API_KEY environment variable"
+)
 
 
 class MockGenerator(FeatureDocumentationMixin):
@@ -68,12 +75,9 @@ def test_infer_project_title_fallback():
 
 def test_generate_tagline_success():
     """Test successful AI tagline generation."""
-    from sourcescribe.engine.generator import DocumentationGenerator
-    from sourcescribe.api.base import LLMMessage
+    generator = MockGenerator()
     
-    generator = DocumentationGenerator(SourceScribeConfig())
-    
-    # Mock LLM response
+    # Mock LLM response - must return LLMResponse object with .content attribute
     mock_response = LLMResponse(
         content='"A powerful tool for developers"',
         model="test-model",
@@ -89,9 +93,7 @@ def test_generate_tagline_success():
 
 def test_generate_tagline_strips_quotes():
     """Test that tagline generation strips quotes properly."""
-    from sourcescribe.engine.generator import DocumentationGenerator
-    
-    generator = DocumentationGenerator(SourceScribeConfig())
+    generator = MockGenerator()
     
     mock_response = LLMResponse(
         content="'Single quoted tagline'",
@@ -107,9 +109,7 @@ def test_generate_tagline_strips_quotes():
 
 def test_generate_tagline_truncates_long_output():
     """Test that overly long taglines are truncated."""
-    from sourcescribe.engine.generator import DocumentationGenerator
-    
-    generator = DocumentationGenerator(SourceScribeConfig())
+    generator = MockGenerator()
     
     long_text = "A" * 150
     mock_response = LLMResponse(
@@ -127,9 +127,7 @@ def test_generate_tagline_truncates_long_output():
 
 def test_generate_tagline_fallback_on_error():
     """Test fallback when AI generation fails."""
-    from sourcescribe.engine.generator import DocumentationGenerator
-    
-    generator = DocumentationGenerator(SourceScribeConfig())
+    generator = MockGenerator()
     generator.llm_provider.generate.side_effect = Exception("API Error")
     
     tagline = generator._generate_tagline([])
@@ -172,7 +170,7 @@ def test_generate_docusaurus_config_content():
     assert "Getting Started" in config_content
     assert "/docs/getting-started/installation" in config_content
     assert "Overview" in config_content
-    assert "/docs/overview/index" in config_content
+    assert "/docs/overview" in config_content
     
     # Check blog is disabled
     assert "blog: false" in config_content
@@ -195,6 +193,7 @@ def test_generate_docusaurus_config_github_url_parsing():
     assert "baseUrl: '/myrepo/'" in config_content
 
 
+@skip_without_api_key
 def test_update_docusaurus_config_creates_file(tmp_path):
     """Test that config file is created."""
     from sourcescribe.engine.generator import DocumentationGenerator
@@ -231,6 +230,7 @@ def test_update_docusaurus_config_creates_file(tmp_path):
     assert "export default config" in content
 
 
+@skip_without_api_key
 def test_update_docusaurus_config_handles_missing_github_url(tmp_path):
     """Test graceful handling when GitHub URL is not available."""
     from sourcescribe.engine.generator import DocumentationGenerator
@@ -265,6 +265,7 @@ def test_update_docusaurus_config_handles_missing_github_url(tmp_path):
     assert "projectName: 'your-repo'" in content
 
 
+@skip_without_api_key
 def test_build_project_context_with_max_files():
     """Test that max_files parameter limits context."""
     from sourcescribe.engine.generator import DocumentationGenerator

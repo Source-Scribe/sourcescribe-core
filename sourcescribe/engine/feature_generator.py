@@ -728,7 +728,7 @@ Return ONLY the tagline text, nothing else."""
             ]
             
             response = self.llm_provider.generate(messages)
-            tagline = response.strip().strip('"').strip("'")
+            tagline = response.content.strip().strip('"').strip("'")
             
             # Validate length
             if len(tagline) > 100:
