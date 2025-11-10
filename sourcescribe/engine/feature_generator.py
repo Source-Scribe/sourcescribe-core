@@ -37,7 +37,7 @@ Use clear, non-technical language. Format in Markdown with proper headings."""
             messages=[LLMMessage(role="user", content=overview_prompt)],
             system_prompt=system_prompt
         )
-        write_file(str(overview_dir / "index.md"), f"# Overview\n\n{response.content}")
+        write_file(str(overview_dir / "index.md"), f"# Overview\n\n{response.content}", sanitize_mdx=True)
         
         # 2. Architecture Overview with diagram
         module_map = self.analyzer.build_module_map(analyses)
@@ -71,7 +71,7 @@ Format in Markdown."""
 
 {arch_diagram}
 """
-        write_file(str(overview_dir / "architecture.md"), arch_content)
+        write_file(str(overview_dir / "architecture.md"), arch_content, sanitize_mdx=True)
         
         # 3. Technology Stack
         tech_prompt = f"""Based on this codebase analysis, document the technology stack:
@@ -91,7 +91,7 @@ Format as a well-structured Markdown document."""
             messages=[LLMMessage(role="user", content=tech_prompt)],
             system_prompt=system_prompt
         )
-        write_file(str(overview_dir / "technology-stack.md"), f"# Technology Stack\n\n{response.content}")
+        write_file(str(overview_dir / "technology-stack.md"), f"# Technology Stack\n\n{response.content}", sanitize_mdx=True)
         
         self.logger.info("Overview section completed")
     
@@ -124,7 +124,7 @@ Include code blocks and commands. Format in Markdown."""
             messages=[LLMMessage(role="user", content=install_prompt)],
             system_prompt=system_prompt
         )
-        write_file(str(getting_started_dir / "installation.md"), f"# Installation\n\n{response.content}")
+        write_file(str(getting_started_dir / "installation.md"), f"# Installation\n\n{response.content}", sanitize_mdx=True)
         
         # 2. Quick Start Guide with sequence diagram
         quickstart_prompt = f"""Create a quick start guide with step-by-step tutorial:
@@ -144,7 +144,7 @@ Use code examples. Format in Markdown."""
             messages=[LLMMessage(role="user", content=quickstart_prompt)],
             system_prompt=system_prompt
         )
-        write_file(str(getting_started_dir / "quick-start.md"), f"# Quick Start\n\n{response.content}")
+        write_file(str(getting_started_dir / "quick-start.md"), f"# Quick Start\n\n{response.content}", sanitize_mdx=True)
         
         # 3. Configuration Guide
         config_prompt = f"""Document the configuration options for this project:
@@ -164,7 +164,7 @@ Format in Markdown with tables for options."""
             messages=[LLMMessage(role="user", content=config_prompt)],
             system_prompt=system_prompt
         )
-        write_file(str(getting_started_dir / "configuration.md"), f"# Configuration\n\n{response.content}")
+        write_file(str(getting_started_dir / "configuration.md"), f"# Configuration\n\n{response.content}", sanitize_mdx=True)
         
         self.logger.info("Getting Started section completed")
     
@@ -209,7 +209,7 @@ Format as a comprehensive Markdown document with clear sections for each feature
             system_prompt=system_prompt
         )
         
-        write_file(str(features_dir / "index.md"), f"# Features\n\n{response.content}")
+        write_file(str(features_dir / "index.md"), f"# Features\n\n{response.content}", sanitize_mdx=True)
         
         self.logger.info("Feature sections completed")
     
@@ -260,7 +260,7 @@ Format in Markdown with extensive use of diagrams."""
 
 {arch_diagram}
 """
-        write_file(str(arch_dir / "components.md"), arch_content)
+        write_file(str(arch_dir / "components.md"), arch_content, sanitize_mdx=True)
         
         self.logger.info("Architecture section completed")
     
@@ -302,7 +302,7 @@ Format in Markdown with clear sections for each endpoint."""
             system_prompt=system_prompt
         )
         
-        write_file(str(api_dir / "endpoints.md"), f"# API Reference\n\n{response.content}")
+        write_file(str(api_dir / "endpoints.md"), f"# API Reference\n\n{response.content}", sanitize_mdx=True)
         
         self.logger.info("API Reference section completed")
     
@@ -351,7 +351,7 @@ This documentation focuses on:
 """
         
         output_path = Path(self.config.output.path) / "README.md"
-        write_file(str(output_path), index_content)
+        write_file(str(output_path), index_content, sanitize_mdx=True)
         
         self.logger.info("Documentation index completed")
     

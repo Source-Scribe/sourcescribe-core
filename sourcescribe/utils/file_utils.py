@@ -69,17 +69,80 @@ def read_file(file_path: str, encoding: str = 'utf-8') -> str:
         return f.read()
 
 
-def write_file(file_path: str, content: str, encoding: str = 'utf-8') -> None:
+def sanitize_mdx_content(content: str) -> str:
+    """
+    Sanitize markdown content to be MDX-compatible.
+    
+    Escapes patterns that MDX might interpret as JSX but aren't valid.
+    
+    Args:
+        content: Markdown content to sanitize
+        
+    Returns:
+        Sanitized content safe for MDX
+    """
+    import re
+    
+    # Escape self-closing tags with dots or special chars (e.g., <file.js/>, <component-name/>)
+    # These are often file references or examples that MDX misinterprets as JSX
+    
+    # Pattern: <anything with dots or dashes/> that's not in a code block
+    # Match self-closing tags that aren't valid React component names
+    def escape_invalid_jsx(match):
+        tag = match.group(0)
+        # Check if it contains dots, dashes, or starts with lowercase (invalid JSX)
+        tag_name = tag[1:-2].strip()  # Remove < and />
+        
+        # If it has dots, dashes, or starts with lowercase, escape it
+        if ('.' in tag_name or '-' in tag_name or 
+            (tag_name and tag_name[0].islower()) or
+            '/' in tag_name):
+            # Escape by wrapping in backticks
+            return f'`{tag}`'
+        return tag
+    
+    # Find self-closing tags not in code blocks
+    # Negative lookbehind and lookahead to avoid code blocks
+    # Allow tags starting with letter or dot (for .env, .gitignore, etc.)
+    pattern = r'(?<!`)(?<!```)<([a-zA-Z.][\w._/\-]*)\s*/>'
+    
+    # Split content by code blocks to avoid modifying code
+    parts = re.split(r'(```[\s\S]*?```|`[^`]+`)', content)
+    
+    # Only process non-code parts
+    for i in range(len(parts)):
+        if not (parts[i].startswith('```') or parts[i].startswith('`')):
+            parts[i] = re.sub(pattern, escape_invalid_jsx, parts[i])
+    
+    content = ''.join(parts)
+    
+    # Also escape angle brackets around file paths like <path/to/file>
+    # but not in code blocks
+    parts = re.split(r'(```[\s\S]*?```|`[^`]+`)', content)
+    for i in range(len(parts)):
+        if not (parts[i].startswith('```') or parts[i].startswith('`')):
+            # Escape <path/with/slashes>
+            parts[i] = re.sub(r'<([a-zA-Z0-9_\-./]+/[a-zA-Z0-9_\-./]+)>', r'`<\1>`', parts[i])
+    
+    return ''.join(parts)
+
+
+def write_file(file_path: str, content: str, encoding: str = 'utf-8', sanitize_mdx: bool = False) -> None:
     """
     Write content to file.
     
     Args:
         file_path: Path to file
         content: Content to write
-        encoding: File encoding
+        encoding: File encoding (default: utf-8)
+        sanitize_mdx: Whether to sanitize content for MDX compatibility (default: False)
     """
-    path = Path(file_path)
-    path.parent.mkdir(parents=True, exist_ok=True)
+    file_obj = Path(file_path)
+    file_obj.parent.mkdir(parents=True, exist_ok=True)
+    
+    # Sanitize MDX if requested and file is markdown
+    if sanitize_mdx and (file_path.endswith('.md') or file_path.endswith('.mdx')):
+        content = sanitize_mdx_content(content)
     
     with open(file_path, 'w', encoding=encoding) as f:
         f.write(content)
