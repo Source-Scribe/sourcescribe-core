@@ -176,9 +176,7 @@ def test_generate_docusaurus_config_content():
 
 def test_generate_docusaurus_config_github_url_parsing():
     """Test GitHub URL is parsed correctly for deployment."""
-    from sourcescribe.engine.generator import DocumentationGenerator
-    
-    generator = DocumentationGenerator(SourceScribeConfig())
+    generator = MockGenerator()
     
     config_content = generator._generate_docusaurus_config_content(
         title="Test",
@@ -188,8 +186,8 @@ def test_generate_docusaurus_config_github_url_parsing():
         repo_name="myrepo"
     )
     
-    # Check deployment URLs - the URL generation creates github pages URL
-    assert "myorg.github.io" in config_content
+    # Check deployment URLs - URL should be just the domain, baseUrl has the path
+    assert "url: 'https://myorg.github.io'" in config_content
     assert "baseUrl: '/myrepo/'" in config_content
 
 

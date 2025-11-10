@@ -703,7 +703,7 @@ const config: Config = {{
   }},
 
   // Set the production url of your site here
-  url: '{github_url.replace("github.com", "").replace("https://", "https://" + org_name + ".github.io")}',
+  url: 'https://{org_name}.github.io',
   // Set the /<baseUrl>/ pathname under which your site is served
   baseUrl: '/{repo_name}/',
 
