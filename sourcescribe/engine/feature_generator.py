@@ -329,58 +329,6 @@ Include mermaid diagrams and GitHub links throughout for citations."""
             {"name": "Usage Examples", "filename": "usage-examples", "description": "How to use the system"},
         ]
     
-    def _convert_citations_to_links(self, content: str, repo_name: str) -> str:
-        """Convert XML cite tags to markdown GitHub links.
-        
-        Converts:
-            <cite repo="org/repo" path="file.py" start="10" end="12" />
-        To:
-            [`file.py#L10-L12`](https://github.com/org/repo/blob/main/file.py#L10-L12)
-        
-        Also handles empty citations: <cite/> -> (removed)
-        """
-        import re
-        
-        # Get GitHub base URL from repo name
-        github_base = f"https://github.com/{repo_name}/blob/main" if repo_name != "repository" else ""
-        
-        def replace_citation(match):
-            # Check if it's an empty citation
-            if match.group(0) == '<cite/>':
-                return ''
-            
-            # Extract attributes
-            path = match.group('path')
-            start = match.group('start')
-            end = match.group('end')
-            
-            if not path or not start:
-                return ''
-            
-            # Build line range
-            if end and end != start:
-                line_range = f"L{start}-L{end}"
-            else:
-                line_range = f"L{start}"
-            
-            # Build markdown link
-            if github_base:
-                link = f"[`{path}#{line_range}`]({github_base}/{path}#{line_range})"
-            else:
-                # Fallback if no GitHub URL available
-                link = f"`{path}#{line_range}`"
-            
-            return f" {link}"
-        
-        # Pattern for XML cite tags with attributes
-        pattern = r'<cite\s+repo="[^"]+"\s+path="(?P<path>[^"]+)"\s+start="(?P<start>\d+)"\s+end="(?P<end>\d+)"\s*/>'
-        content = re.sub(pattern, replace_citation, content)
-        
-        # Pattern for empty cite tags
-        content = re.sub(r'<cite\s*/>', '', content)
-        
-        return content
-    
     def _generate_architecture_section(self, analyses: List[Dict[str, Any]]) -> None:
         """Generate detailed architecture documentation."""
         self.logger.info("Generating Architecture section")
@@ -484,27 +432,29 @@ Format in Markdown with clear sections for each endpoint."""
         insights_dir = Path(self.config.output.path) / "insights"
         create_directory(str(insights_dir))
         
-        # Get repository name for citations
+        # Get repository name and GitHub base URL for citations
         repo_name = "repository"
+        github_base = ""
         if self.config.repository.github_url:
+            github_base = self.config.repository.github_url.rstrip('/')
             # Extract repo name from GitHub URL
-            parts = self.config.repository.github_url.rstrip('/').split('/')
+            parts = github_base.split('/')
             if len(parts) >= 2:
                 repo_name = f"{parts[-2]}/{parts[-1]}"
         
-        # Deep analysis with XML citations
+        # Deep analysis with markdown GitHub link citations
         deep_analysis_prompt = f"""Analyze this codebase comprehensively and extract ALL important insights.
 
 {context}
 
 CRITICAL CITATION REQUIREMENTS:
-- Output a <cite/> tag after EVERY SINGLE SENTENCE and claim
+- Add a citation link after EVERY SINGLE SENTENCE and claim
 - Every sentence MUST END IN A CITATION
-- Format: <cite repo="{repo_name}" path="FILE_PATH" start="START_LINE" end="END_LINE" />
-- If citation is unnecessary, output empty <cite/>
+- Format: [`path/file.py#L10-L12`]({github_base}/blob/main/path/file.py#L10-L12)
 - DON'T CITE ENTIRE FUNCTIONS - cite only function/class definition (max 3 lines)
 - Use MINIMUM lines needed to support each claim
-- Multiple citations use multiple <cite> tags
+- Multiple citations use multiple markdown links
+- For single-line citations use #L10, for ranges use #L10-L12
 
 ANSWER STRUCTURE:
 1. Start with brief summary (2-3 sentences) of overall findings
@@ -529,99 +479,94 @@ Analyze and document insights about:
 - Testing approaches
 
 Example format with citations:
-"The authentication system uses JWT tokens for stateless auth<cite repo="{repo_name}" path="auth/service.py" start="15" end="17" />. 
-Each token contains user ID and role information<cite repo="{repo_name}" path="auth/jwt.py" start="42" end="44" />."
+"The authentication system uses JWT tokens for stateless auth [`auth/service.py#L15-L17`]({github_base}/blob/main/auth/service.py#L15-L17). Each token contains user ID and role information [`auth/jwt.py#L42-L44`]({github_base}/blob/main/auth/jwt.py#L42-L44)."
 
-IMPORTANT: Every sentence needs a citation. Be thorough and comprehensive."""
+IMPORTANT: Every sentence needs a citation link. Be thorough and comprehensive."""
 
         response = self.llm_provider.generate(
             messages=[LLMMessage(role="user", content=deep_analysis_prompt)],
             system_prompt=system_prompt
         )
         
-        # Convert XML citations to markdown GitHub links
-        analysis_content = self._convert_citations_to_links(response.content, repo_name)
-        write_file(str(insights_dir / "deep-analysis.md"), f"# Deep Codebase Analysis\n\n{analysis_content}", sanitize_mdx=True)
+        write_file(str(insights_dir / "deep-analysis.md"), f"# Deep Codebase Analysis\n\n{response.content}", sanitize_mdx=True)
         
         # Generate key patterns and practices document
         patterns_prompt = f"""Identify and document all important patterns, practices, and conventions used in this codebase.
 
 {context}
 
-CRITICAL: Use <cite repo="{repo_name}" path="FILE_PATH" start="LINE" end="LINE" /> after EVERY sentence.
+CRITICAL: Add a citation link after EVERY sentence.
+Format: [`path/file.py#L10-L12`]({github_base}/blob/main/path/file.py#L10-L12)
 
 Document:
 ## Design Patterns
-What design patterns are used and where<cite/>
+What design patterns are used and where (with citations)
 
 ## Code Organization
-How code is structured and organized<cite/>
+How code is structured and organized (with citations)
 
 ## Naming Conventions  
-Patterns in how things are named<cite/>
+Patterns in how things are named (with citations)
 
 ## Error Handling Patterns
-How errors are handled consistently<cite/>
+How errors are handled consistently (with citations)
 
 ## Testing Strategies
-Testing approaches and patterns<cite/>
+Testing approaches and patterns (with citations)
 
 ## Performance Patterns
-Optimization techniques used<cite/>
+Optimization techniques used (with citations)
 
 ## Security Practices
-Security measures implemented<cite/>
+Security measures implemented (with citations)
 
 ## Notes
-Additional observations<cite/>
+Additional observations (with citations)
 
-Be concise. Every claim needs a citation."""
+Be concise. Every claim needs a citation link."""
 
         response = self.llm_provider.generate(
             messages=[LLMMessage(role="user", content=patterns_prompt)],
             system_prompt=system_prompt
         )
         
-        # Convert XML citations to markdown GitHub links
-        patterns_content = self._convert_citations_to_links(response.content, repo_name)
-        write_file(str(insights_dir / "patterns-and-practices.md"), f"# Patterns and Practices\n\n{patterns_content}", sanitize_mdx=True)
+        write_file(str(insights_dir / "patterns-and-practices.md"), f"# Patterns and Practices\n\n{response.content}", sanitize_mdx=True)
         
         # Generate critical paths document
         critical_paths_prompt = f"""Document the critical code paths and workflows in this system.
 
 {context}
 
-CRITICAL: Use <cite repo="{repo_name}" path="FILE_PATH" start="LINE" end="LINE" /> after EVERY sentence.
+CRITICAL: Add a citation link after EVERY sentence.
+Format: [`path/file.py#L10-L12`]({github_base}/blob/main/path/file.py#L10-L12)
 
 Identify and explain:
 ## Critical User Flows
-Most important user-facing workflows<cite/>
+Most important user-facing workflows (with citations)
 
 ## Data Processing Pipelines  
-How data moves through the system<cite/>
+How data moves through the system (with citations)
 
 ## Integration Points
-Critical external system connections<cite/>
+Critical external system connections (with citations)
 
 ## Failure Scenarios
-What happens when things go wrong<cite/>
+What happens when things go wrong (with citations)
 
 ## Performance Bottlenecks
-Potential performance issues<cite/>
+Potential performance issues (with citations)
 
 ## Notes
-Other critical considerations<cite/>
+Other critical considerations (with citations)
 
-Include mermaid diagrams for complex flows. Every sentence needs citation."""
+Include mermaid diagrams for complex flows. Every sentence needs a citation link."""
 
         response = self.llm_provider.generate(
             messages=[LLMMessage(role="user", content=critical_paths_prompt)],
             system_prompt=system_prompt
         )
         
-        # Convert XML citations to markdown GitHub links
-        critical_paths_content = self._convert_citations_to_links(response.content, repo_name)
-        write_file(str(insights_dir / "critical-paths.md"), f"# Critical Paths and Workflows\n\n{critical_paths_content}", sanitize_mdx=True)
+        write_file(str(insights_dir / "critical-paths.md"), f"# Critical Paths and Workflows\n\n{response.content}", sanitize_mdx=True)
         
         # Generate insights index
         index_content = f"""# Deep Insights
