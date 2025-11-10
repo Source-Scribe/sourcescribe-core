@@ -163,18 +163,34 @@ class CodeAnalyzer:
             
             # Normalize dependencies to module names for internal imports
             # Convert "sourcescribe.engine.analyzer" → "analyzer"
-            # Convert "sourcescribe.api.anthropic_provider" → "anthropic_provider"
+            # Convert "./components/App.js" → "App"
+            # Convert "../../utils/helper" → "helper"
             dependencies = []
             for dep in raw_dependencies:
+                # Python-style imports
                 if dep.startswith('sourcescribe.'):
                     # Internal dependency - extract the module name (last part)
                     dep_parts = dep.split('.')
                     dep_module = dep_parts[-1]
                     dependencies.append(dep_module)
-                elif '.' not in dep:
+                # JavaScript/TypeScript relative imports
+                elif dep.startswith('./') or dep.startswith('../'):
+                    # Extract filename from path: ./components/App.js → App
+                    dep_path = Path(dep)
+                    dep_module = dep_path.stem  # Get filename without extension
+                    if dep_module and dep_module not in ['index', '.', '..']:
+                        dependencies.append(dep_module)
+                # Named imports without path (likely internal)
+                elif '/' not in dep and '.' not in dep:
                     # Simple import that might be another file in the project
                     dependencies.append(dep)
-                # Skip external packages (anthropic, click, etc.)
+                # Handle absolute imports like @/components/App
+                elif dep.startswith('@/'):
+                    dep_path = Path(dep[2:])  # Remove @/
+                    dep_module = dep_path.stem
+                    if dep_module and dep_module != 'index':
+                        dependencies.append(dep_module)
+                # Skip external packages (node_modules, etc.)
             
             # Count elements
             elements = analysis.get('elements', [])

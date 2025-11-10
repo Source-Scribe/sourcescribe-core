@@ -73,6 +73,7 @@ class DiagramGenerator:
         # Add relationships (filtered to show only significant ones)
         edges_added = 0
         edges_by_importance = []
+        unmatched_deps = set()  # Track dependencies that don't match any module
         
         for i, module in enumerate(important_modules):
             deps = module.get('dependencies', [])
@@ -82,6 +83,9 @@ class DiagramGenerator:
                     # Calculate importance (modules with more deps = more important edges)
                     importance = len(module.get('dependencies', []))
                     edges_by_importance.append((importance, i, j, module['name'], dep))
+                else:
+                    # Track unmatched for debugging
+                    unmatched_deps.add(dep)
         
         # Sort by importance and limit
         edges_by_importance.sort(reverse=True)
@@ -109,6 +113,10 @@ class DiagramGenerator:
             lines.append(f"    %% ({edges_added} relationships)")
         elif edges_added == 0:
             lines.append("    %% Note: No internal dependencies detected")
+            if unmatched_deps:
+                # Show sample of unmatched deps for debugging
+                sample_deps = list(unmatched_deps)[:5]
+                lines.append(f"    %% Unmatched dependencies (sample): {', '.join(sample_deps)}")
         
         lines.append("```")
         return "\n".join(lines)

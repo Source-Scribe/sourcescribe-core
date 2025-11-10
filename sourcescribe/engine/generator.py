@@ -424,6 +424,19 @@ Diagram Usage:
 - Class diagrams for data models (when applicable)
 - State diagrams for stateful behavior
 
+CRITICAL: Use CORRECT Mermaid syntax:
+- Sequence diagrams: MUST start with `sequenceDiagram` (NOT `graph`)
+- Use `participant` to define participants
+- Use `->>` or `->` for messages between participants
+- Example:
+  ```mermaid
+  sequenceDiagram
+      participant User
+      participant API
+      User->>API: Request data
+      API->>User: Return data
+  ```
+
 Write in a professional, clear, and accessible tone. Assume the reader wants to understand 
 how to USE the system, not browse through individual source files."""
     

@@ -55,7 +55,20 @@ Generate documentation covering:
 3. **Data Flow** - How information moves through the system
 4. **Design Principles** - Architectural patterns used
 
-Create a mermaid sequence diagram showing a typical user workflow.
+Create a mermaid sequence diagram showing a typical user workflow using VALID Mermaid syntax:
+
+Example format:
+```mermaid
+sequenceDiagram
+    participant User
+    participant Frontend
+    participant API
+    User->>Frontend: Opens app
+    Frontend->>API: Fetches data
+    API->>Frontend: Returns response
+    Frontend->>User: Displays content
+```
+
 Format in Markdown."""
 
         response = self.llm_provider.generate(
@@ -137,7 +150,20 @@ Create:
 3. **What Just Happened?** - Explain what the example did
 4. **Next Steps** - Where to go from here
 
-Include a mermaid sequence diagram showing what happens when running the example.
+Include a mermaid sequence diagram showing what happens when running the example using VALID Mermaid syntax:
+
+Example:
+```mermaid
+sequenceDiagram
+    participant User
+    participant App
+    participant Service
+    User->>App: Starts application
+    App->>Service: Initializes
+    Service->>App: Ready
+    App->>User: Shows interface
+```
+
 Use code examples. Format in Markdown."""
 
         response = self.llm_provider.generate(
