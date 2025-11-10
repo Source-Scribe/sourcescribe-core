@@ -531,10 +531,11 @@ export default sidebars;
     }}"""
     
     def _update_docusaurus_config(self, analyses: List[Dict[str, Any]]) -> None:
-        """Update Docusaurus config with GitHub repository information."""
+        """Generate/update comprehensive Docusaurus configuration with AI-powered content."""
         from sourcescribe.utils.github_utils import get_github_url_from_git
+        import re
         
-        self.logger.info("Updating Docusaurus configuration")
+        self.logger.info("Generating Docusaurus configuration")
         
         # Get GitHub URL
         github_url = self.config.repository.github_url
@@ -542,18 +543,19 @@ export default sidebars;
             github_url = get_github_url_from_git(self.config.repository.path)
         
         if not github_url:
-            self.logger.warning("No GitHub URL found, skipping Docusaurus config update")
-            return
-        
-        # Parse GitHub URL to get org and repo
-        # Format: https://github.com/org/repo
-        try:
-            parts = github_url.rstrip('/').split('/')
-            org_name = parts[-2]
-            repo_name = parts[-1]
-        except (IndexError, AttributeError):
-            self.logger.warning(f"Could not parse GitHub URL: {github_url}")
-            return
+            self.logger.warning("No GitHub URL found, using defaults for Docusaurus config")
+            org_name = "your-org"
+            repo_name = "your-repo"
+        else:
+            # Parse GitHub URL to get org and repo
+            try:
+                parts = github_url.rstrip('/').split('/')
+                org_name = parts[-2]
+                repo_name = parts[-1].replace('.git', '')
+            except (IndexError, AttributeError):
+                self.logger.warning(f"Could not parse GitHub URL: {github_url}")
+                org_name = "your-org"
+                repo_name = "your-repo"
         
         # Try to find docusaurus.config.ts
         output_path = Path(self.config.output.path)
@@ -573,31 +575,255 @@ export default sidebars;
         
         config_path = website_root / "docusaurus.config.ts"
         
+        # Infer project title from repo name or README
+        title = self._infer_project_title(repo_name, analyses)
+        
+        # Generate tagline using AI
+        tagline = self._generate_tagline(analyses)
+        
+        # Generate the complete Docusaurus config
+        config_content = self._generate_docusaurus_config_content(
+            title=title,
+            tagline=tagline,
+            github_url=github_url if github_url else f"https://github.com/{org_name}/{repo_name}",
+            org_name=org_name,
+            repo_name=repo_name
+        )
+        
         try:
-            # Read existing config
-            with open(config_path, 'r') as f:
-                config_content = f.read()
-            
-            # Update organizationName
-            import re
-            config_content = re.sub(
-                r"organizationName:\s*['\"]([^'\"]*)['\"]",
-                f"organizationName: '{org_name}'",
-                config_content
-            )
-            
-            # Update projectName
-            config_content = re.sub(
-                r"projectName:\s*['\"]([^'\"]*)['\"]",
-                f"projectName: '{repo_name}'",
-                config_content
-            )
-            
-            # Write back
             write_file(str(config_path), config_content)
-            self.logger.info(f"Updated Docusaurus config at: {config_path}")
-            self.logger.info(f"  - organizationName: {org_name}")
-            self.logger.info(f"  - projectName: {repo_name}")
-            
+            self.logger.info(f"Generated Docusaurus config at: {config_path}")
+            self.logger.info(f"  - Title: {title}")
+            self.logger.info(f"  - Tagline: {tagline}")
+            self.logger.info(f"  - Organization: {org_name}")
+            self.logger.info(f"  - Project: {repo_name}")
         except Exception as e:
             self.logger.error(f"Failed to update Docusaurus config: {e}")
+    
+    def _infer_project_title(self, repo_name: str, analyses: List[Dict[str, Any]]) -> str:
+        """Infer project title from repo name and analysis."""
+        # Check if there's a clear project name in README or package.json
+        repo_path = Path(self.config.repository.path)
+        
+        # Try package.json first
+        package_json = repo_path / "package.json"
+        if package_json.exists():
+            try:
+                import json
+                with open(package_json) as f:
+                    data = json.load(f)
+                    if 'name' in data and not data['name'].startswith('@'):
+                        return data['name'].replace('-', ' ').title()
+            except:
+                pass
+        
+        # Try pyproject.toml
+        pyproject = repo_path / "pyproject.toml"
+        if pyproject.exists():
+            try:
+                import re
+                with open(pyproject) as f:
+                    content = f.read()
+                    match = re.search(r'name\s*=\s*["\']([^"\']+)["\']', content)
+                    if match:
+                        return match.group(1).replace('-', ' ').title()
+            except:
+                pass
+        
+        # Fallback to formatted repo name
+        return repo_name.replace('-', ' ').replace('_', ' ').title()
+    
+    def _generate_tagline(self, analyses: List[Dict[str, Any]]) -> str:
+        """Generate a catchy tagline using AI."""
+        self.logger.info("Generating project tagline with AI")
+        
+        # Build context from analyses
+        context = self._build_project_context(analyses, max_files=5)
+        
+        prompt = f"""Based on this codebase analysis, generate a concise, catchy tagline (max 80 characters).
+
+{context}
+
+Requirements:
+- Under 80 characters
+- Clear and descriptive
+- Professional but engaging
+- No buzzwords or jargon
+- Focus on what the project does and who it's for
+
+Return ONLY the tagline text, nothing else."""
+
+        try:
+            messages = [
+                LLMMessage(role="system", content=self._get_system_prompt()),
+                LLMMessage(role="user", content=prompt)
+            ]
+            
+            response = self.llm_provider.generate(messages)
+            tagline = response.strip().strip('"').strip("'")
+            
+            # Validate length
+            if len(tagline) > 100:
+                tagline = tagline[:97] + "..."
+            
+            return tagline
+        except Exception as e:
+            self.logger.warning(f"Failed to generate tagline with AI: {e}")
+            return "Auto-generated documentation for your project"
+    
+    def _generate_docusaurus_config_content(
+        self,
+        title: str,
+        tagline: str,
+        github_url: str,
+        org_name: str,
+        repo_name: str
+    ) -> str:
+        """Generate complete Docusaurus configuration content."""
+        
+        # Determine if we're outputting to a subdirectory
+        output_path = Path(self.config.output.path)
+        website_root = output_path.parent.parent if 'docs' in str(output_path) else output_path.parent
+        
+        # Try to find if docs are in a subdirectory
+        docs_dir = website_root / "docs"
+        
+        config = f"""import {{themes as prismThemes}} from 'prism-react-renderer';
+import type {{Config}} from '@docusaurus/types';
+import type * as Preset from '@docusaurus/preset-classic';
+
+const config: Config = {{
+  title: '{title}',
+  tagline: '{tagline}',
+  favicon: 'img/favicon.ico',
+
+  // Future flags, see https://docusaurus.io/docs/api/docusaurus-config#future
+  future: {{
+    v4: true,
+  }},
+
+  // Set the production url of your site here
+  url: '{github_url.replace("github.com", "").replace("https://", "https://" + org_name + ".github.io")}',
+  // Set the /<baseUrl>/ pathname under which your site is served
+  baseUrl: '/{repo_name}/',
+
+  // GitHub pages deployment config
+  organizationName: '{org_name}',
+  projectName: '{repo_name}',
+
+  onBrokenLinks: 'warn',
+  onBrokenMarkdownLinks: 'warn',
+
+  i18n: {{
+    defaultLocale: 'en',
+    locales: ['en'],
+  }},
+
+  presets: [
+    [
+      'classic',
+      {{
+        docs: {{
+          sidebarPath: './sidebars.ts',
+          editUrl: '{github_url}/tree/main/website/',
+        }},
+        blog: false,
+        theme: {{
+          customCss: './src/css/custom.css',
+        }},
+      }} satisfies Preset.Options,
+    ],
+  ],
+
+  markdown: {{
+    mermaid: true,
+  }},
+  themes: ['@docusaurus/theme-mermaid'],
+
+  themeConfig: {{
+    mermaid: {{
+      theme: {{light: 'neutral', dark: 'dark'}},
+      options: {{
+        fontSize: 16,
+        nodeSpacing: 50,
+        rankSpacing: 50,
+        curve: 'basis',
+        padding: 15,
+      }},
+    }},
+    image: 'img/social-card.jpg',
+    colorMode: {{
+      respectPrefersColorScheme: true,
+    }},
+    navbar: {{
+      title: '{title}',
+      logo: {{
+        alt: '{title} Logo',
+        src: 'img/logo.svg',
+      }},
+      items: [
+        {{
+          type: 'docSidebar',
+          sidebarId: 'tutorialSidebar',
+          position: 'left',
+          label: 'Documentation',
+        }},
+        {{
+          href: '{github_url}',
+          label: 'GitHub',
+          position: 'right',
+        }},
+      ],
+    }},
+    footer: {{
+      style: 'dark',
+      links: [
+        {{
+          title: 'Documentation',
+          items: [
+            {{
+              label: 'Getting Started',
+              to: '/docs/getting-started/installation',
+            }},
+            {{
+              label: 'Overview',
+              to: '/docs/overview/index',
+            }},
+          ],
+        }},
+        {{
+          title: 'Community',
+          items: [
+            {{
+              label: 'GitHub',
+              href: '{github_url}',
+            }},
+            {{
+              label: 'Issues',
+              href: '{github_url}/issues',
+            }},
+          ],
+        }},
+        {{
+          title: 'More',
+          items: [
+            {{
+              label: 'Repository',
+              href: '{github_url}',
+            }},
+          ],
+        }},
+      ],
+      copyright: `Copyright © ${{new Date().getFullYear()}} {title}. Built with Docusaurus.`,
+    }},
+    prism: {{
+      theme: prismThemes.github,
+      darkTheme: prismThemes.dracula,
+      additionalLanguages: ['bash', 'json', 'python', 'typescript', 'javascript'],
+    }},
+  }} satisfies Preset.ThemeConfig,
+}};
+
+export default config;
+"""
+        return config
