@@ -140,31 +140,31 @@ Include code blocks and commands. Format in Markdown."""
         write_file(str(getting_started_dir / "installation.md"), f"# Installation\n\n{response.content}", sanitize_mdx=True)
         
         # 2. Quick Start Guide with sequence diagram
-        quickstart_prompt = f"""Create a quick start guide with step-by-step tutorial:
+        quickstart_prompt = f"""Create a quick start guide for developers who want to use or extend this code:
 
 {context}
 
 Create:
-1. **First Steps** - Minimal setup to get running
-2. **Hello World Example** - Simple working example
-3. **What Just Happened?** - Explain what the example did
-4. **Next Steps** - Where to go from here
+1. **Understanding the Code** - Brief overview of what this code does and its key components
+2. **Common Use Cases** - Practical examples of how to use the existing functionality
+3. **Extending the Code** - How developers would add new features or customize behavior
+4. **Next Steps** - What to implement or explore next
 
-Include a mermaid sequence diagram showing what happens when running the example using VALID Mermaid syntax:
+Include a mermaid sequence diagram showing a typical usage flow or interaction pattern using VALID Mermaid syntax:
 
 Example:
 ```mermaid
 sequenceDiagram
-    participant User
-    participant App
+    participant Developer
+    participant Module
     participant Service
-    User->>App: Starts application
-    App->>Service: Initializes
-    Service->>App: Ready
-    App->>User: Shows interface
+    Developer->>Module: Calls function
+    Module->>Service: Processes request
+    Service->>Module: Returns result
+    Module->>Developer: Returns output
 ```
 
-Use code examples. Format in Markdown."""
+Use real code examples that make sense for this codebase (not generic "Hello World"). Format in Markdown."""
 
         response = self.llm_provider.generate(
             messages=[LLMMessage(role="user", content=quickstart_prompt)],
