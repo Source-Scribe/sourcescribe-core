@@ -42,7 +42,20 @@ Use clear, non-technical language. Format in Markdown with proper headings."""
         # 2. Architecture Overview with diagram
         module_map = self.analyzer.build_module_map(analyses)
         modules = list(module_map.values())
-        arch_diagram = self.diagram_generator.generate_architecture_diagram(modules, "System Architecture")
+        
+        # Simplify diagram if too many modules (limit to 15 for readability)
+        diagram_modules = modules
+        if len(modules) > 15:
+            # Sort by number of functions/classes (most important first)
+            sorted_modules = sorted(
+                modules,
+                key=lambda m: len(m.get('functions', [])) + len(m.get('classes', [])),
+                reverse=True
+            )
+            diagram_modules = sorted_modules[:15]
+            self.logger.info(f"Simplified overview diagram from {len(modules)} to 15 modules")
+        
+        arch_diagram = self.diagram_generator.generate_architecture_diagram(diagram_modules, "System Architecture")
         
         arch_prompt = f"""Analyze this system architecture and explain:
 
@@ -98,6 +111,8 @@ Create a comprehensive technology stack document with:
 4. **Infrastructure** - Deployment, hosting, CI/CD
 5. **Third-Party Integrations** - External services and APIs
 
+Do not assume any technology/services that are not directly included within the repository.
+
 Format as a well-structured Markdown document."""
 
         response = self.llm_provider.generate(
@@ -146,9 +161,8 @@ Include code blocks and commands. Format in Markdown."""
 
 Create:
 1. **Understanding the Code** - Brief overview of what this code does and its key components
-2. **Common Use Cases** - Practical examples of how to use the existing functionality
-3. **Extending the Code** - How developers would add new features or customize behavior
-4. **Next Steps** - What to implement or explore next
+2. **Extending the Code** - How developers would add new features or customize behavior
+3. **Next Steps** - What to implement or explore next
 
 Include a mermaid sequence diagram showing a typical usage flow or interaction pattern using VALID Mermaid syntax:
 
@@ -269,9 +283,6 @@ Detailed explanation with mermaid diagram (sequence/flowchart/state diagram as a
 ## Key Components
 Main classes, functions, or modules involved (with GitHub links to source code)
 
-## Common Use Cases
-Practical examples with code snippets
-
 ## Configuration
 Relevant settings, environment variables, or options (use tables)
 
@@ -338,7 +349,20 @@ Include mermaid diagrams and GitHub links throughout for citations."""
         
         module_map = self.analyzer.build_module_map(analyses)
         modules = list(module_map.values())
-        arch_diagram = self.diagram_generator.generate_architecture_diagram(modules, "System Architecture")
+        
+        # Simplify diagram if too many modules (limit to 15 for readability)
+        diagram_modules = modules
+        if len(modules) > 15:
+            # Sort by number of functions/classes (most important first)
+            sorted_modules = sorted(
+                modules,
+                key=lambda m: len(m.get('functions', [])) + len(m.get('classes', [])),
+                reverse=True
+            )
+            diagram_modules = sorted_modules[:15]
+            self.logger.info(f"Simplified architecture diagram from {len(modules)} to 15 modules")
+        
+        arch_diagram = self.diagram_generator.generate_architecture_diagram(diagram_modules, "System Architecture")
         
         system_prompt = self._get_system_prompt()
         
