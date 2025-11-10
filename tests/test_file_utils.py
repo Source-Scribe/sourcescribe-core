@@ -175,3 +175,42 @@ Use the <Button/> component for actions.
     
     # Valid React component should NOT be escaped
     assert "<Button/>" in sanitized
+
+
+def test_sanitize_mdx_unclosed_br_tags():
+    """Test fixing unclosed <br> tags (user's actual error)."""
+    # Unclosed <br> in table
+    content = """| Column 1 | Column 2 |
+|----------|----------|
+| Value 1<br>Line 2 | Value 2 |"""
+    
+    sanitized = sanitize_mdx_content(content)
+    
+    # Should be self-closing
+    assert "<br />" in sanitized
+    assert "<br>" not in sanitized
+
+
+def test_sanitize_mdx_unclosed_html_tags():
+    """Test fixing various unclosed HTML tags."""
+    content = """
+Use a line break<br>here.
+Add a horizontal rule<hr>below.
+Show an image<img src="test.png">
+"""
+    
+    sanitized = sanitize_mdx_content(content)
+    
+    # All should be self-closing
+    assert "<br />" in sanitized
+    assert "<hr />" in sanitized
+    assert '<img src="test.png" />' in sanitized
+
+
+def test_sanitize_mdx_urls_in_angle_brackets():
+    """Test escaping URLs in angle brackets."""
+    content = "Visit <https://example.com> for more info"
+    sanitized = sanitize_mdx_content(content)
+    
+    # URLs should be escaped
+    assert "`<https://example.com>`" in sanitized

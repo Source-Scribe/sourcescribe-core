@@ -83,46 +83,50 @@ def sanitize_mdx_content(content: str) -> str:
     """
     import re
     
-    # Escape self-closing tags with dots or special chars (e.g., <file.js/>, <component-name/>)
-    # These are often file references or examples that MDX misinterprets as JSX
-    
-    # Pattern: <anything with dots or dashes/> that's not in a code block
-    # Match self-closing tags that aren't valid React component names
-    def escape_invalid_jsx(match):
-        tag = match.group(0)
-        # Check if it contains dots, dashes, or starts with lowercase (invalid JSX)
-        tag_name = tag[1:-2].strip()  # Remove < and />
-        
-        # If it has dots, dashes, or starts with lowercase, escape it
-        if ('.' in tag_name or '-' in tag_name or 
-            (tag_name and tag_name[0].islower()) or
-            '/' in tag_name):
-            # Escape by wrapping in backticks
-            return f'`{tag}`'
-        return tag
-    
-    # Find self-closing tags not in code blocks
-    # Negative lookbehind and lookahead to avoid code blocks
-    # Allow tags starting with letter or dot (for .env, .gitignore, etc.)
-    pattern = r'(?<!`)(?<!```)<([a-zA-Z.][\w._/\-]*)\s*/>'
-    
     # Split content by code blocks to avoid modifying code
     parts = re.split(r'(```[\s\S]*?```|`[^`]+`)', content)
     
-    # Only process non-code parts
+    # Process each non-code part
     for i in range(len(parts)):
         if not (parts[i].startswith('```') or parts[i].startswith('`')):
+            # 1. Fix unclosed HTML tags (br, hr, img, etc.) -> self-closing
+            # Match: <br>, <hr>, <img ...>, etc. (not already self-closing)
+            parts[i] = re.sub(
+                r'<(br|hr|img|input|meta|link)(\s+[^>]*?)?>(?!\s*/)',
+                r'<\1\2 />',
+                parts[i],
+                flags=re.IGNORECASE
+            )
+            
+            # 2. Escape invalid self-closing tags (with dots, dashes, lowercase)
+            def escape_invalid_jsx(match):
+                tag = match.group(0)
+                tag_name = tag[1:-2].strip()  # Remove < and />
+                
+                # If it has dots, dashes, starts with lowercase, or has slashes, escape it
+                if ('.' in tag_name or '-' in tag_name or 
+                    (tag_name and tag_name[0].islower()) or
+                    '/' in tag_name):
+                    return f'`{tag}`'
+                return tag
+            
+            # Match self-closing tags: <anything/>
+            pattern = r'(?<!`)(?<!```)<([a-zA-Z.][\w._/\-]*)\s*/>'
             parts[i] = re.sub(pattern, escape_invalid_jsx, parts[i])
-    
-    content = ''.join(parts)
-    
-    # Also escape angle brackets around file paths like <path/to/file>
-    # but not in code blocks
-    parts = re.split(r'(```[\s\S]*?```|`[^`]+`)', content)
-    for i in range(len(parts)):
-        if not (parts[i].startswith('```') or parts[i].startswith('`')):
-            # Escape <path/with/slashes>
-            parts[i] = re.sub(r'<([a-zA-Z0-9_\-./]+/[a-zA-Z0-9_\-./]+)>', r'`<\1>`', parts[i])
+            
+            # 3. Escape angle brackets around file paths like <path/to/file>
+            parts[i] = re.sub(
+                r'<([a-zA-Z0-9_\-./]+/[a-zA-Z0-9_\-./]+)>',
+                r'`<\1>`',
+                parts[i]
+            )
+            
+            # 4. Escape URLs in angle brackets like <http://example.com>
+            parts[i] = re.sub(
+                r'<(https?://[^>]+)>',
+                r'`<\1>`',
+                parts[i]
+            )
     
     return ''.join(parts)
 
