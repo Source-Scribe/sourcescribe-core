@@ -214,3 +214,49 @@ def test_sanitize_mdx_urls_in_angle_brackets():
     
     # URLs should be escaped
     assert "`<https://example.com>`" in sanitized
+
+
+def test_sanitize_mdx_jsx_placeholder_variables():
+    """Test escaping placeholder variables that cause ReferenceError in MDX."""
+    # The actual error from the user
+    content = "See the [config]({github_permalink}) for details"
+    sanitized = sanitize_mdx_content(content)
+    
+    # Should be escaped to prevent "ReferenceError: github_permalink is not defined"
+    assert "`{github_permalink}`" in sanitized
+    
+    # Test various placeholder patterns
+    content2 = "Use {api_key} and {base_url} in your config"
+    sanitized2 = sanitize_mdx_content(content2)
+    assert "`{api_key}`" in sanitized2
+    assert "`{base_url}`" in sanitized2
+    
+    # Test snake_case and camelCase
+    content3 = "Set {some_variable} or {someVariable}"
+    sanitized3 = sanitize_mdx_content(content3)
+    assert "`{some_variable}`" in sanitized3
+    assert "`{someVariable}`" in sanitized3
+
+
+def test_sanitize_mdx_jsx_in_code_blocks():
+    """Test that curly braces in code blocks are preserved."""
+    content = """
+Here is some text with {placeholder}
+
+```javascript
+const obj = {key: "value"};
+const template = `Hello {name}`;
+```
+
+More text with {another_placeholder}
+"""
+    
+    sanitized = sanitize_mdx_content(content)
+    
+    # Placeholders outside code should be escaped
+    assert "`{placeholder}`" in sanitized
+    assert "`{another_placeholder}`" in sanitized
+    
+    # Code inside blocks should be preserved exactly
+    assert 'const obj = {key: "value"};' in sanitized
+    assert 'const template = `Hello {name}`;' in sanitized

@@ -388,11 +388,12 @@ Module: {module_name}{github_link}
             github_instruction = f"""
 GitHub Links:
 - **IMPORTANT**: When referencing specific code, configuration, or implementation details, always include GitHub permalinks
-- Use this format: [description]({{github_permalink}})
+- Use actual GitHub URLs, not placeholders
 - Example: "See the [configuration model]({self.github_url}/blob/{self.github_branch}/path/to/file.py#L10-L25)"
 - Link to specific line ranges when referencing code blocks
 - Link to files when discussing modules or components
 - This makes documentation more useful and navigable
+- DO NOT use placeholder text like "github_permalink" - use real URLs only
 """
         
         return f"""You are an expert technical documentation writer who specializes in creating 

@@ -127,6 +127,29 @@ def sanitize_mdx_content(content: str) -> str:
                 r'`<\1>`',
                 parts[i]
             )
+            
+            # 5. Escape curly braces that look like JSX expressions but aren't valid
+            # Match {word}, {snake_case}, {github_permalink} etc.
+            # These cause "ReferenceError: variable is not defined" in MDX
+            # Don't match: markdown links [...](url), inline code, or actual JSX props
+            def escape_invalid_jsx_expression(match):
+                full_match = match.group(0)
+                var_name = match.group(1)
+                
+                # If it looks like a placeholder variable (letters, numbers, underscores, dots)
+                # and not a complex JSX expression (no spaces, operators, etc.)
+                if re.match(r'^[a-zA-Z_][a-zA-Z0-9_\.]*$', var_name):
+                    # Escape it with backticks
+                    return f'`{full_match}`'
+                return full_match
+            
+            # Match {variable_name} patterns (not inside links or complex expressions)
+            # Negative lookbehind to avoid matching inside markdown links
+            parts[i] = re.sub(
+                r'(?<!\])\{([a-zA-Z_][a-zA-Z0-9_\.]*)\}',
+                escape_invalid_jsx_expression,
+                parts[i]
+            )
     
     return ''.join(parts)
 
