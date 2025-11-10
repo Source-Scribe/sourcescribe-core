@@ -465,18 +465,52 @@ ANSWER STRUCTURE:
 6. Include "Notes" section at end
 7. Be extremely concise - only most important details
 
-TOPICS TO COVER:
-Analyze and document insights about:
-- Core architecture and design patterns
-- Key algorithms and data structures
-- Important business logic and domain concepts
-- Critical integration points
-- Data flow and processing pipelines
-- Security and authentication mechanisms
-- Performance considerations
-- Error handling strategies
-- Configuration and extensibility points
-- Testing approaches
+TOPICS TO COVER (analyze ALL applicable areas):
+
+## System Architecture
+- High-level architecture and design patterns (microservices, monolith, serverless, etc.)
+- Service communication patterns and protocols
+- External integrations and third-party services
+- API design and contracts
+
+## Infrastructure and Deployment
+- Cloud infrastructure (AWS, GCP, Azure, etc.)
+- CI/CD pipelines and automation
+- Container orchestration (Docker, Kubernetes, EKS, etc.)
+- Environment configuration (dev, staging, production)
+- Infrastructure as Code and deployment processes
+
+## Backend Services/Components
+- Core services and their responsibilities
+- Authentication and authorization flows
+- Business logic and domain concepts
+- Data processing pipelines
+- Scheduled jobs and background processing
+- Inter-service communication
+- API gateway and routing logic
+
+## Data Layer
+- Database architecture and schema design
+- ORM/database access patterns
+- Data models and relationships
+- Migration strategies
+- Data persistence and caching
+- Event logging and audit trails
+
+## Frontend Application (if applicable)
+- Application structure and framework
+- State management approach
+- Routing and navigation
+- UI component architecture
+- Build and bundling configuration
+
+## Cross-Cutting Concerns
+- Authentication and security mechanisms
+- Error handling and logging strategies
+- Performance optimizations
+- Testing approaches and coverage
+- Configuration management
+- Monitoring and observability
 
 Example format with citations:
 "The authentication system uses JWT tokens for stateless auth [`auth/service.py#L15-L17`]({github_base}/blob/main/auth/service.py#L15-L17). Each token contains user ID and role information [`auth/jwt.py#L42-L44`]({github_base}/blob/main/auth/jwt.py#L42-L44)."
@@ -495,33 +529,79 @@ IMPORTANT: Every sentence needs a citation link. Be thorough and comprehensive."
 
 {context}
 
-CRITICAL: Add a citation link after EVERY sentence.
+CRITICAL: Add a citation link after EVERY sentence. Where L10-L12 is line 10 through 12
 Format: [`path/file.py#L10-L12`]({github_base}/blob/main/path/file.py#L10-L12)
 
-Document:
+Document ALL applicable patterns:
+
+## Architectural Patterns
+- Microservices/monolith/serverless architecture patterns (with citations)
+- Service communication patterns (REST, GraphQL, gRPC, message queues) (with citations)
+- API gateway and routing patterns (with citations)
+- Database access and connection pooling patterns (with citations)
+
 ## Design Patterns
-What design patterns are used and where (with citations)
+- Object-oriented and functional design patterns used (with citations)
+- Dependency injection and inversion of control (with citations)
+- Factory, singleton, observer, and other GoF patterns (with citations)
+- Repository and service layer patterns (with citations)
 
 ## Code Organization
-How code is structured and organized (with citations)
+- Project structure and module organization (with citations)
+- Separation of concerns and layering (with citations)
+- Shared utilities and common packages (with citations)
+- Code reuse and DRY principles (with citations)
 
 ## Naming Conventions  
-Patterns in how things are named (with citations)
+- File and directory naming patterns (with citations)
+- Function, class, and variable naming conventions (with citations)
+- API endpoint and route naming (with citations)
+- Database table and column naming (with citations)
 
 ## Error Handling Patterns
-How errors are handled consistently (with citations)
+- Exception handling strategies (with citations)
+- Error response formatting (with citations)
+- Logging and error tracking (with citations)
+- Retry and fallback mechanisms (with citations)
+
+## Data Management Patterns
+- ORM usage and query patterns (with citations)
+- Migration and schema version control (with citations)
+- Transaction management (with citations)
+- Caching strategies (with citations)
+
+## Authentication and Authorization
+- Authentication flows and token management (with citations)
+- Role-based access control (RBAC) patterns (with citations)
+- OAuth/OIDC integration patterns (with citations)
+- Session and state management (with citations)
 
 ## Testing Strategies
-Testing approaches and patterns (with citations)
+- Unit, integration, and e2e testing approaches (with citations)
+- Mocking and test data strategies (with citations)
+- Test organization and naming (with citations)
+- Code coverage and quality gates (with citations)
 
 ## Performance Patterns
-Optimization techniques used (with citations)
+- Query optimization techniques (with citations)
+- Caching and memoization (with citations)
+- Async/parallel processing (with citations)
+- Resource pooling and connection management (with citations)
+
+## Deployment and DevOps Patterns
+- CI/CD pipeline patterns (with citations)
+- Environment configuration management (with citations)
+- Container and orchestration patterns (with citations)
+- Blue-green/canary deployment strategies (with citations)
 
 ## Security Practices
-Security measures implemented (with citations)
+- Input validation and sanitization (with citations)
+- SQL injection and XSS prevention (with citations)
+- Secrets and credentials management (with citations)
+- Security headers and CORS configuration (with citations)
 
 ## Notes
-Additional observations (with citations)
+Additional observations and anti-patterns to avoid (with citations)
 
 Be concise. Every claim needs a citation link."""
 
@@ -537,27 +617,79 @@ Be concise. Every claim needs a citation link."""
 
 {context}
 
-CRITICAL: Add a citation link after EVERY sentence.
+CRITICAL: Add a citation link after EVERY sentence. Where L10-L12 is line 10 through 12
 Format: [`path/file.py#L10-L12`]({github_base}/blob/main/path/file.py#L10-L12)
 
-Identify and explain:
-## Critical User Flows
-Most important user-facing workflows (with citations)
+Identify and explain ALL critical paths:
+
+## Authentication and Authorization Flows
+- Login and signup workflows (with citations)
+- Password reset and 2FA flows (with citations)
+- Session management and token refresh (with citations)
+- Permission checking and role validation (with citations)
+
+## Core Business Workflows
+- Primary user journeys and transactions (with citations)
+- State transitions and lifecycle management (with citations)
+- Approval and validation workflows (with citations)
+- Payment and financial transaction flows (with citations)
 
 ## Data Processing Pipelines  
-How data moves through the system (with citations)
+- Request/response flow through the system (with citations)
+- Data transformation and validation (with citations)
+- Background job processing (with citations)
+- Event streaming and real-time updates (with citations)
+
+## Service Communication Paths
+- API gateway routing and request forwarding (with citations)
+- Inter-service communication patterns (with citations)
+- Database query execution paths (with citations)
+- Caching and data retrieval flows (with citations)
 
 ## Integration Points
-Critical external system connections (with citations)
+- Third-party API integrations (Auth0, Stripe, Firebase, etc.) (with citations)
+- External service authentication and authorization (with citations)
+- Webhook handling and callback processing (with citations)
+- Message queue and event bus integration (with citations)
+
+## Deployment and CI/CD Flows
+- Build and test pipeline execution (with citations)
+- Container image creation and push (with citations)
+- Deployment to environments (dev/staging/prod) (with citations)
+- Database migration execution (with citations)
+
+## Scheduled Jobs and Automation
+- Cron job execution and scheduling (with citations)
+- Automated cleanup and maintenance tasks (with citations)
+- Report generation and batch processing (with citations)
+- Monitoring and health check flows (with citations)
+
+## Error Handling and Recovery
+- Exception capture and error logging (with citations)
+- Retry mechanisms and circuit breakers (with citations)
+- Fallback strategies (with citations)
+- Alert and notification triggers (with citations)
 
 ## Failure Scenarios
-What happens when things go wrong (with citations)
+- Database connection failures (with citations)
+- External service outages (with citations)
+- Transaction rollback scenarios (with citations)
+- Data consistency and race conditions (with citations)
 
 ## Performance Bottlenecks
-Potential performance issues (with citations)
+- Database query performance issues (with citations)
+- N+1 query problems (with citations)
+- Memory and resource constraints (with citations)
+- Network latency and timeout issues (with citations)
+
+## Security-Critical Paths
+- Input validation and sanitization (with citations)
+- SQL injection and XSS prevention points (with citations)
+- CSRF protection mechanisms (with citations)
+- Rate limiting and DDoS protection (with citations)
 
 ## Notes
-Other critical considerations (with citations)
+Other critical considerations and optimization opportunities (with citations)
 
 Include mermaid diagrams for complex flows. Every sentence needs a citation link."""
 
@@ -586,6 +718,7 @@ Every claim in these documents is backed by a citation linking directly to the s
 **Citation Format:**
 ```markdown
 [`file/path.py#L10-L12`](https://github.com/{repo_name}/blob/main/file/path.py#L10-L12)
+where L10-L12 is line 10 through 12
 ```
 
 Click any citation to view the exact lines of code that support the claim. Citations typically point to:
