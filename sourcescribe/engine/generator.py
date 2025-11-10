@@ -84,6 +84,9 @@ class DocumentationGenerator(FeatureDocumentationMixin):
         if self.config.style.include_api_docs:
             self._generate_api_reference_section(analyses)
         
+        # Generate deep insights with XML citations (Devin DeepWiki format)
+        self._generate_deep_insights_section(analyses)
+        
         # Create index
         if self.config.output.create_index:
             self._generate_feature_index(analyses)

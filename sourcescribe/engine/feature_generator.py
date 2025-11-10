@@ -422,6 +422,174 @@ Format in Markdown with clear sections for each endpoint."""
         
         self.logger.info("API Reference section completed")
     
+    def _generate_deep_insights_section(self, analyses: List[Dict[str, Any]]) -> None:
+        """Generate comprehensive insights using Devin DeepWiki citation format."""
+        self.logger.info("Generating Deep Insights section with citations")
+        
+        context = self._build_project_context(analyses)
+        system_prompt = self._get_system_prompt()
+        
+        insights_dir = Path(self.config.output.path) / "insights"
+        create_directory(str(insights_dir))
+        
+        # Get repository name for citations
+        repo_name = "repository"
+        if self.config.repository.github_url:
+            # Extract repo name from GitHub URL
+            parts = self.config.repository.github_url.rstrip('/').split('/')
+            if len(parts) >= 2:
+                repo_name = f"{parts[-2]}/{parts[-1]}"
+        
+        # Deep analysis with XML citations
+        deep_analysis_prompt = f"""Analyze this codebase comprehensively and extract ALL important insights.
+
+{context}
+
+CRITICAL CITATION REQUIREMENTS:
+- Output a <cite/> tag after EVERY SINGLE SENTENCE and claim
+- Every sentence MUST END IN A CITATION
+- Format: <cite repo="{repo_name}" path="FILE_PATH" start="START_LINE" end="END_LINE" />
+- If citation is unnecessary, output empty <cite/>
+- DON'T CITE ENTIRE FUNCTIONS - cite only function/class definition (max 3 lines)
+- Use MINIMUM lines needed to support each claim
+- Multiple citations use multiple <cite> tags
+
+ANSWER STRUCTURE:
+1. Start with brief summary (2-3 sentences) of overall findings
+2. Use ## for main sections, ### for subsections
+3. Keep paragraphs short (2-3 sentences) and focused
+4. Use bullet points or numbered lists for multiple items
+5. Format code references with backticks
+6. Include "Notes" section at end
+7. Be extremely concise - only most important details
+
+TOPICS TO COVER:
+Analyze and document insights about:
+- Core architecture and design patterns
+- Key algorithms and data structures
+- Important business logic and domain concepts
+- Critical integration points
+- Data flow and processing pipelines
+- Security and authentication mechanisms
+- Performance considerations
+- Error handling strategies
+- Configuration and extensibility points
+- Testing approaches
+
+Example format with citations:
+"The authentication system uses JWT tokens for stateless auth<cite repo="{repo_name}" path="auth/service.py" start="15" end="17" />. 
+Each token contains user ID and role information<cite repo="{repo_name}" path="auth/jwt.py" start="42" end="44" />."
+
+IMPORTANT: Every sentence needs a citation. Be thorough and comprehensive."""
+
+        response = self.llm_provider.generate(
+            messages=[LLMMessage(role="user", content=deep_analysis_prompt)],
+            system_prompt=system_prompt
+        )
+        
+        write_file(str(insights_dir / "deep-analysis.md"), f"# Deep Codebase Analysis\n\n{response.content}", sanitize_mdx=True)
+        
+        # Generate key patterns and practices document
+        patterns_prompt = f"""Identify and document all important patterns, practices, and conventions used in this codebase.
+
+{context}
+
+CRITICAL: Use <cite repo="{repo_name}" path="FILE_PATH" start="LINE" end="LINE" /> after EVERY sentence.
+
+Document:
+## Design Patterns
+What design patterns are used and where<cite/>
+
+## Code Organization
+How code is structured and organized<cite/>
+
+## Naming Conventions  
+Patterns in how things are named<cite/>
+
+## Error Handling Patterns
+How errors are handled consistently<cite/>
+
+## Testing Strategies
+Testing approaches and patterns<cite/>
+
+## Performance Patterns
+Optimization techniques used<cite/>
+
+## Security Practices
+Security measures implemented<cite/>
+
+## Notes
+Additional observations<cite/>
+
+Be concise. Every claim needs a citation."""
+
+        response = self.llm_provider.generate(
+            messages=[LLMMessage(role="user", content=patterns_prompt)],
+            system_prompt=system_prompt
+        )
+        
+        write_file(str(insights_dir / "patterns-and-practices.md"), f"# Patterns and Practices\n\n{response.content}", sanitize_mdx=True)
+        
+        # Generate critical paths document
+        critical_paths_prompt = f"""Document the critical code paths and workflows in this system.
+
+{context}
+
+CRITICAL: Use <cite repo="{repo_name}" path="FILE_PATH" start="LINE" end="LINE" /> after EVERY sentence.
+
+Identify and explain:
+## Critical User Flows
+Most important user-facing workflows<cite/>
+
+## Data Processing Pipelines  
+How data moves through the system<cite/>
+
+## Integration Points
+Critical external system connections<cite/>
+
+## Failure Scenarios
+What happens when things go wrong<cite/>
+
+## Performance Bottlenecks
+Potential performance issues<cite/>
+
+## Notes
+Other critical considerations<cite/>
+
+Include mermaid diagrams for complex flows. Every sentence needs citation."""
+
+        response = self.llm_provider.generate(
+            messages=[LLMMessage(role="user", content=critical_paths_prompt)],
+            system_prompt=system_prompt
+        )
+        
+        write_file(str(insights_dir / "critical-paths.md"), f"# Critical Paths and Workflows\n\n{response.content}", sanitize_mdx=True)
+        
+        # Generate insights index
+        index_content = f"""# Deep Insights
+
+Comprehensive analysis of the codebase with detailed citations to source code.
+
+## Available Insights
+
+- **[Deep Codebase Analysis](./deep-analysis)** - Comprehensive analysis of architecture, patterns, and key implementations
+- **[Patterns and Practices](./patterns-and-practices)** - Design patterns, conventions, and best practices used throughout
+- **[Critical Paths and Workflows](./critical-paths)** - Important code paths, data flows, and integration points
+
+## About Citations
+
+This section uses detailed citations in the format:
+```xml
+<cite repo="{repo_name}" path="file/path.py" start="10" end="12" />
+```
+
+Each citation points to specific lines of code that support the claim, allowing you to verify and explore the implementation details.
+"""
+        
+        write_file(str(insights_dir / "index.md"), index_content, sanitize_mdx=True)
+        
+        self.logger.info("Deep Insights section completed")
+    
     def _generate_feature_index(self, analyses: List[Dict[str, Any]]) -> None:
         """Generate main index for feature-based docs."""
         self.logger.info("Generating documentation index")
@@ -449,6 +617,12 @@ Detailed documentation of each major feature and capability
 
 ### [Architecture](./architecture/components)
 Deep dive into system design, components, and patterns
+
+### [Deep Insights](./insights/)
+Comprehensive codebase analysis with detailed source code citations
+- **[Deep Codebase Analysis](./insights/deep-analysis)** - Architecture, patterns, and implementations
+- **[Patterns and Practices](./insights/patterns-and-practices)** - Design patterns and conventions  
+- **[Critical Paths](./insights/critical-paths)** - Important workflows and integration points
 
 ## 🚀 Quick Links
 
