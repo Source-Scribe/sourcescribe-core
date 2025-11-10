@@ -5,6 +5,8 @@ import json
 from pathlib import Path
 from unittest.mock import Mock, MagicMock, patch
 from sourcescribe.engine.feature_generator import FeatureDocumentationMixin
+from sourcescribe.engine.analyzer import CodeAnalyzer
+from sourcescribe.engine.diagram import DiagramGenerator
 from sourcescribe.config.models import SourceScribeConfig
 from sourcescribe.api.base import LLMResponse
 
@@ -16,6 +18,8 @@ class MockGenerator(FeatureDocumentationMixin):
         self.config = SourceScribeConfig()
         self.logger = Mock()
         self.llm_provider = Mock()
+        self.analyzer = Mock(spec=CodeAnalyzer)
+        self.diagram_generator = Mock(spec=DiagramGenerator)
     
     def _get_system_prompt(self):
         return "You are a helpful assistant."
@@ -282,3 +286,108 @@ def test_build_project_context_with_max_files():
     # Should only include 5 files
     file_lines = [line for line in context.split('\n') if 'file' in line and '.py' in line]
     assert len(file_lines) <= 6  # 5 files + potential header
+
+
+def test_create_docusaurus_config_when_missing(tmp_path):
+    """Test that docusaurus.config.ts is created when it doesn't exist."""
+    generator = MockGenerator()
+    
+    # Set up paths: project/website/docs
+    website_dir = tmp_path / "website"
+    docs_dir = website_dir / "docs"
+    docs_dir.mkdir(parents=True)
+    
+    generator.config.output.path = str(docs_dir)
+    generator.config.repository.path = str(tmp_path)
+    
+    # Mock LLM response for tagline
+    generator.llm_provider.generate.return_value = LLMResponse(
+        content="An awesome project",
+        model="test",
+        usage={}
+    )
+    
+    # Call the method with mock analyses
+    analyses = [{'path': '/test/file.py', 'language': 'python'}]
+    
+    with patch('sourcescribe.utils.github_utils.get_github_url_from_git') as mock_git:
+        mock_git.return_value = "https://github.com/testorg/testrepo"
+        generator._update_docusaurus_config(analyses)
+    
+    # Check that config was created
+    config_path = website_dir / "docusaurus.config.ts"
+    assert config_path.exists()
+    
+    # Verify content
+    content = config_path.read_text()
+    assert "testorg" in content
+    assert "testrepo" in content
+    assert "Testrepo" in content  # Title
+
+
+def test_detect_website_root_from_path(tmp_path):
+    """Test detecting website root from output path containing 'website'."""
+    generator = MockGenerator()
+    
+    # Set up paths: project/website/docs
+    website_dir = tmp_path / "website"
+    docs_dir = website_dir / "docs"
+    docs_dir.mkdir(parents=True)
+    
+    generator.config.output.path = str(docs_dir)
+    generator.config.repository.path = str(tmp_path)
+    
+    # Mock LLM response
+    generator.llm_provider.generate.return_value = LLMResponse(
+        content="Test tagline",
+        model="test",
+        usage={}
+    )
+    
+    analyses = [{'path': '/test/file.py', 'language': 'python'}]
+    
+    with patch('sourcescribe.utils.github_utils.get_github_url_from_git') as mock_git:
+        mock_git.return_value = "https://github.com/org/repo"
+        generator._update_docusaurus_config(analyses)
+    
+    # Config should be created in website directory, not docs
+    config_path = website_dir / "docusaurus.config.ts"
+    assert config_path.exists()
+    assert not (docs_dir / "docusaurus.config.ts").exists()
+
+
+def test_detect_docusaurus_from_package_json(tmp_path):
+    """Test detecting Docusaurus project from package.json."""
+    generator = MockGenerator()
+    
+    # Set up directory with package.json
+    docs_dir = tmp_path / "docs"
+    docs_dir.mkdir()
+    
+    # Create package.json with Docusaurus dependency
+    package_json = tmp_path / "package.json"
+    package_json.write_text(json.dumps({
+        "dependencies": {
+            "@docusaurus/core": "^3.0.0"
+        }
+    }))
+    
+    generator.config.output.path = str(docs_dir)
+    generator.config.repository.path = str(tmp_path)
+    
+    # Mock LLM response
+    generator.llm_provider.generate.return_value = LLMResponse(
+        content="Test tagline",
+        model="test",
+        usage={}
+    )
+    
+    analyses = [{'path': '/test/file.py', 'language': 'python'}]
+    
+    with patch('sourcescribe.utils.github_utils.get_github_url_from_git') as mock_git:
+        mock_git.return_value = "https://github.com/org/repo"
+        generator._update_docusaurus_config(analyses)
+    
+    # Config should be created in project root (where package.json is)
+    config_path = tmp_path / "docusaurus.config.ts"
+    assert config_path.exists()

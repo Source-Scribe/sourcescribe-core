@@ -557,21 +557,60 @@ export default sidebars;
                 org_name = "your-org"
                 repo_name = "your-repo"
         
-        # Try to find docusaurus.config.ts
+        # Try to find existing docusaurus.config.ts or determine where to create it
         output_path = Path(self.config.output.path)
         website_root = None
         current = output_path
         
+        # First, search for existing config file
         for _ in range(5):  # Search up to 5 levels
             current = current.parent
             config_file = current / "docusaurus.config.ts"
             if config_file.exists():
                 website_root = current
+                self.logger.info(f"Found existing Docusaurus config at: {config_file}")
                 break
         
+        # If not found, check if we're in a typical website structure
         if not website_root:
-            self.logger.warning("Could not find docusaurus.config.ts, skipping config update")
-            return
+            # Check if output path contains 'website/docs' pattern
+            output_str = str(output_path)
+            if 'website' in output_str:
+                # Find the website directory
+                parts = output_path.parts
+                if 'website' in parts:
+                    website_idx = parts.index('website')
+                    website_root = Path(*parts[:website_idx + 1])
+                    self.logger.info(f"Detected website root at: {website_root}")
+            
+            # If still not found, look for common indicators (package.json with docusaurus)
+            if not website_root:
+                current = output_path
+                for _ in range(5):
+                    current = current.parent
+                    package_json = current / "package.json"
+                    if package_json.exists():
+                        try:
+                            import json
+                            with open(package_json, 'r') as f:
+                                pkg_data = json.load(f)
+                                # Check if it's a Docusaurus project
+                                if ('dependencies' in pkg_data and 
+                                    '@docusaurus/core' in pkg_data.get('dependencies', {})):
+                                    website_root = current
+                                    self.logger.info(f"Detected Docusaurus project at: {website_root}")
+                                    break
+                        except:
+                            pass
+            
+            # If still not found, default to parent of output path
+            if not website_root:
+                # Assume output is 'docs' or 'website/docs', create config in parent
+                if output_path.name == 'docs':
+                    website_root = output_path.parent
+                else:
+                    website_root = output_path.parent
+                self.logger.info(f"Creating Docusaurus config in: {website_root}")
         
         config_path = website_root / "docusaurus.config.ts"
         
@@ -591,14 +630,17 @@ export default sidebars;
         )
         
         try:
+            config_exists = config_path.exists()
             write_file(str(config_path), config_content)
-            self.logger.info(f"Generated Docusaurus config at: {config_path}")
+            
+            action = "Updated" if config_exists else "Created"
+            self.logger.info(f"{action} Docusaurus config at: {config_path}")
             self.logger.info(f"  - Title: {title}")
             self.logger.info(f"  - Tagline: {tagline}")
             self.logger.info(f"  - Organization: {org_name}")
             self.logger.info(f"  - Project: {repo_name}")
         except Exception as e:
-            self.logger.error(f"Failed to update Docusaurus config: {e}")
+            self.logger.error(f"Failed to create/update Docusaurus config: {e}")
     
     def _infer_project_title(self, repo_name: str, analyses: List[Dict[str, Any]]) -> str:
         """Infer project title from repo name and analysis."""
