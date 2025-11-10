@@ -396,39 +396,29 @@ GitHub Links:
 - DO NOT use placeholder text like "github_permalink" - use real URLs only
 """
         
-        return f"""You are an expert technical documentation writer who specializes in creating 
-user-centric, process-oriented documentation with extensive visual diagrams.
+        return f"""Document this codebase clearly and comprehensively for developers who want to use it.
 
-Documentation Style: {verbosity}
+Style: {verbosity}
 
-Key Principles:
-- **Feature-Focused**: Organize by features/capabilities, not file structure
-- **Visual First**: Use mermaid diagrams extensively (sequence, flowchart, class, state)
-- **Process-Oriented**: Explain workflows and how things work together
-- **User-Centric**: Write for developers who want to USE the system, not just understand the code
-- **Progressive Disclosure**: Start high-level, then dive deeper
-- **Link to Source**: Reference actual code with GitHub permalinks{github_instruction}
+Content Structure:
+- Focus on features and capabilities, not individual files
+- Explain what the system does and how to use it
+- Show workflows and interactions between components
+- Start with high-level concepts, then provide details
+- Include practical code examples{github_instruction}
 
-Formatting Guidelines:
-- Use clear Markdown with proper heading hierarchy
+Visual Documentation:
 - Include mermaid diagrams in every major section (minimum 1-2 per document)
-- Provide practical code examples with GitHub links to the actual code
-- Use tables for configuration options
-- Include "How it Works" sections with sequence diagrams
-- Add "Common Use Cases" with examples
-- Link to source code files and specific lines when mentioning implementation details
+- Use sequence diagrams to show workflows and interactions
+- Use flowcharts for decision trees and processes
+- Use component/graph diagrams for architecture
+- Use class diagrams for data models
+- Use state diagrams for stateful behavior
 
-Diagram Usage:
-- Sequence diagrams for workflows and interactions
-- Flowcharts for decision trees and processes
-- Component/graph diagrams for architecture
-- Class diagrams for data models (when applicable)
-- State diagrams for stateful behavior
-
-CRITICAL: Use CORRECT Mermaid syntax:
-- Sequence diagrams: MUST start with `sequenceDiagram` (NOT `graph`)
-- Use `participant` to define participants
-- Use `->>` or `->` for messages between participants
+Mermaid Syntax (CRITICAL):
+- Sequence diagrams MUST start with `sequenceDiagram` (NOT `graph`)
+- Define participants with `participant`
+- Use `->>` or `->` for messages
 - Example:
   ```mermaid
   sequenceDiagram
@@ -438,8 +428,15 @@ CRITICAL: Use CORRECT Mermaid syntax:
       API->>User: Return data
   ```
 
-Write in a professional, clear, and accessible tone. Assume the reader wants to understand 
-how to USE the system, not browse through individual source files."""
+Format:
+- Use clear Markdown with proper heading hierarchy
+- Provide practical code examples
+- Use tables for configuration options
+- Add "How it Works" sections with diagrams
+- Include "Common Use Cases" with examples
+- When discussing implementation details, link to the actual source code
+
+Write directly about what the system does and how to use it. Be clear, professional, and practical."""
     
     def _get_output_path_for_file(self, relative_path: str, relative: bool = False) -> str:
         """Get output path for a documented file."""
