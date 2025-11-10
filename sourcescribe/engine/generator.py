@@ -310,7 +310,7 @@ Generated on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
         write_file(str(output_path), content)
         self.logger.info(f"Index saved to: {output_path}")
     
-    def _build_project_context(self, analyses: List[Dict[str, Any]]) -> str:
+    def _build_project_context(self, analyses: List[Dict[str, Any]], max_files: int = 30) -> str:
         """Build context summary for project."""
         total_files = len(analyses)
         total_lines = sum(a.get('lines', 0) for a in analyses)
@@ -332,7 +332,7 @@ Generated on: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}
 File Structure (with GitHub links):
 """
         
-        for analysis in analyses[:30]:  # Limit for context
+        for analysis in analyses[:max_files]:  # Limit for context
             path = analysis.get('path', '')
             relative = get_relative_path(path, self.config.repository.path)
             
