@@ -329,6 +329,58 @@ Include mermaid diagrams and GitHub links throughout for citations."""
             {"name": "Usage Examples", "filename": "usage-examples", "description": "How to use the system"},
         ]
     
+    def _convert_citations_to_links(self, content: str, repo_name: str) -> str:
+        """Convert XML cite tags to markdown GitHub links.
+        
+        Converts:
+            <cite repo="org/repo" path="file.py" start="10" end="12" />
+        To:
+            [`file.py#L10-L12`](https://github.com/org/repo/blob/main/file.py#L10-L12)
+        
+        Also handles empty citations: <cite/> -> (removed)
+        """
+        import re
+        
+        # Get GitHub base URL from repo name
+        github_base = f"https://github.com/{repo_name}/blob/main" if repo_name != "repository" else ""
+        
+        def replace_citation(match):
+            # Check if it's an empty citation
+            if match.group(0) == '<cite/>':
+                return ''
+            
+            # Extract attributes
+            path = match.group('path')
+            start = match.group('start')
+            end = match.group('end')
+            
+            if not path or not start:
+                return ''
+            
+            # Build line range
+            if end and end != start:
+                line_range = f"L{start}-L{end}"
+            else:
+                line_range = f"L{start}"
+            
+            # Build markdown link
+            if github_base:
+                link = f"[`{path}#{line_range}`]({github_base}/{path}#{line_range})"
+            else:
+                # Fallback if no GitHub URL available
+                link = f"`{path}#{line_range}`"
+            
+            return f" {link}"
+        
+        # Pattern for XML cite tags with attributes
+        pattern = r'<cite\s+repo="[^"]+"\s+path="(?P<path>[^"]+)"\s+start="(?P<start>\d+)"\s+end="(?P<end>\d+)"\s*/>'
+        content = re.sub(pattern, replace_citation, content)
+        
+        # Pattern for empty cite tags
+        content = re.sub(r'<cite\s*/>', '', content)
+        
+        return content
+    
     def _generate_architecture_section(self, analyses: List[Dict[str, Any]]) -> None:
         """Generate detailed architecture documentation."""
         self.logger.info("Generating Architecture section")
@@ -487,7 +539,9 @@ IMPORTANT: Every sentence needs a citation. Be thorough and comprehensive."""
             system_prompt=system_prompt
         )
         
-        write_file(str(insights_dir / "deep-analysis.md"), f"# Deep Codebase Analysis\n\n{response.content}", sanitize_mdx=True)
+        # Convert XML citations to markdown GitHub links
+        analysis_content = self._convert_citations_to_links(response.content, repo_name)
+        write_file(str(insights_dir / "deep-analysis.md"), f"# Deep Codebase Analysis\n\n{analysis_content}", sanitize_mdx=True)
         
         # Generate key patterns and practices document
         patterns_prompt = f"""Identify and document all important patterns, practices, and conventions used in this codebase.
@@ -528,7 +582,9 @@ Be concise. Every claim needs a citation."""
             system_prompt=system_prompt
         )
         
-        write_file(str(insights_dir / "patterns-and-practices.md"), f"# Patterns and Practices\n\n{response.content}", sanitize_mdx=True)
+        # Convert XML citations to markdown GitHub links
+        patterns_content = self._convert_citations_to_links(response.content, repo_name)
+        write_file(str(insights_dir / "patterns-and-practices.md"), f"# Patterns and Practices\n\n{patterns_content}", sanitize_mdx=True)
         
         # Generate critical paths document
         critical_paths_prompt = f"""Document the critical code paths and workflows in this system.
@@ -563,7 +619,9 @@ Include mermaid diagrams for complex flows. Every sentence needs citation."""
             system_prompt=system_prompt
         )
         
-        write_file(str(insights_dir / "critical-paths.md"), f"# Critical Paths and Workflows\n\n{response.content}", sanitize_mdx=True)
+        # Convert XML citations to markdown GitHub links
+        critical_paths_content = self._convert_citations_to_links(response.content, repo_name)
+        write_file(str(insights_dir / "critical-paths.md"), f"# Critical Paths and Workflows\n\n{critical_paths_content}", sanitize_mdx=True)
         
         # Generate insights index
         index_content = f"""# Deep Insights
@@ -578,12 +636,19 @@ Comprehensive analysis of the codebase with detailed citations to source code.
 
 ## About Citations
 
-This section uses detailed citations in the format:
-```xml
-<cite repo="{repo_name}" path="file/path.py" start="10" end="12" />
+Every claim in these documents is backed by a citation linking directly to the source code on GitHub.
+
+**Citation Format:**
+```markdown
+[`file/path.py#L10-L12`](https://github.com/{repo_name}/blob/main/file/path.py#L10-L12)
 ```
 
-Each citation points to specific lines of code that support the claim, allowing you to verify and explore the implementation details.
+Click any citation to view the exact lines of code that support the claim. Citations typically point to:
+- Function or class definitions (not entire implementations)
+- The most relevant 1-5 lines of code
+- Specific configuration or important logic
+
+This allows you to verify every statement and explore the implementation details directly.
 """
         
         write_file(str(insights_dir / "index.md"), index_content, sanitize_mdx=True)
