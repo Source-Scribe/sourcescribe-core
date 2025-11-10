@@ -792,6 +792,7 @@ const config: Config = {{
       'classic',
       {{
         docs: {{
+          routeBasePath: '/', // Docs-only mode: make docs the homepage
           sidebarPath: './sidebars.ts',
           editUrl: '{github_url}/tree/main/website/',
         }},
@@ -831,12 +832,6 @@ const config: Config = {{
       }},
       items: [
         {{
-          type: 'docSidebar',
-          sidebarId: 'tutorialSidebar',
-          position: 'left',
-          label: 'Documentation',
-        }},
-        {{
           href: '{github_url}',
           label: 'GitHub',
           position: 'right',
@@ -851,11 +846,11 @@ const config: Config = {{
           items: [
             {{
               label: 'Getting Started',
-              to: '/docs/getting-started/installation',
+              to: '/getting-started/installation',
             }},
             {{
               label: 'Overview',
-              to: '/docs/overview',
+              to: '/overview',
             }},
           ],
         }},
