@@ -356,18 +356,40 @@ This documentation focuses on:
         self.logger.info("Documentation index completed")
     
     def _generate_docusaurus_sidebar(self, analyses: List[Dict[str, Any]]) -> None:
-        """Generate Docusaurus sidebar configuration automatically."""
+        """Generate Docusaurus sidebar configuration automatically based on actual file structure."""
         self.logger.info("Generating Docusaurus sidebar configuration")
         
-        # Determine the relative path from website root to docs
-        # Typically: website/docs/api-reference or just docs/api-reference
         output_path = Path(self.config.output.path)
         
-        # Try to determine if we're in a website/docs structure
-        sidebar_items_prefix = "api-reference"
-        if "website" in str(output_path):
-            # We're likely in website/docs/api-reference
-            sidebar_items_prefix = "api-reference"
+        # Find website root
+        website_root = None
+        current = output_path
+        for _ in range(5):  # Search up to 5 levels
+            current = current.parent
+            if (current / "package.json").exists() or (current / "docusaurus.config.ts").exists():
+                website_root = current
+                break
+        
+        if not website_root:
+            self.logger.warning("Could not find Docusaurus website root, skipping sidebar generation")
+            return
+        
+        # Determine the doc path prefix relative to website/docs
+        # If output_path is /path/to/website/docs, prefix is empty
+        # If output_path is /path/to/website/docs/api-reference, prefix is 'api-reference'
+        docs_dir = website_root / "docs"
+        try:
+            relative_to_docs = output_path.relative_to(docs_dir)
+            prefix = str(relative_to_docs) if str(relative_to_docs) != '.' else ''
+        except ValueError:
+            # output_path is not under website/docs
+            prefix = ''
+        
+        # Scan the output directory to build sidebar structure
+        sidebar_structure = self._scan_docs_structure(output_path, prefix)
+        
+        # Generate sidebar config
+        sidebar_items = self._build_sidebar_items(sidebar_structure)
         
         sidebar_config = f"""/**
  * Creating a sidebar enables you to:
@@ -385,71 +407,128 @@ This documentation focuses on:
 import type {{SidebarsConfig}} from '@docusaurus/plugin-content-docs';
 
 const sidebars: SidebarsConfig = {{
-  tutorialSidebar: [
-    {{
-      type: 'doc',
-      id: '{sidebar_items_prefix}/README',
-      label: 'Documentation Home',
-    }},
-    {{
-      type: 'category',
-      label: 'Overview',
-      collapsed: false,
-      items: [
-        '{sidebar_items_prefix}/overview/index',
-        '{sidebar_items_prefix}/overview/architecture',
-        '{sidebar_items_prefix}/overview/technology-stack',
-      ],
-    }},
-    {{
-      type: 'category',
-      label: 'Getting Started',
-      collapsed: false,
-      items: [
-        '{sidebar_items_prefix}/getting-started/installation',
-        '{sidebar_items_prefix}/getting-started/quick-start',
-        '{sidebar_items_prefix}/getting-started/configuration',
-      ],
-    }},
-    {{
-      type: 'category',
-      label: 'Features',
-      items: [
-        '{sidebar_items_prefix}/features/index',
-      ],
-    }},
-    {{
-      type: 'category',
-      label: 'Architecture',
-      items: [
-        '{sidebar_items_prefix}/architecture/components',
-      ],
-    }},
-  ],
+  tutorialSidebar: {sidebar_items},
 }};
 
 export default sidebars;
 """
         
-        # Try to find website root by going up from output path
-        website_root = None
-        current = output_path
-        for _ in range(5):  # Search up to 5 levels
-            current = current.parent
-            if (current / "package.json").exists() or (current / "docusaurus.config.ts").exists():
-                website_root = current
-                break
+        sidebar_path = website_root / "sidebars.ts"
+        write_file(str(sidebar_path), sidebar_config)
+        self.logger.info(f"Generated Docusaurus sidebar at: {sidebar_path}")
+    
+    def _scan_docs_structure(self, docs_path: Path, prefix: str) -> Dict[str, Any]:
+        """Scan documentation directory and build structure."""
+        structure = {
+            'readme': None,
+            'categories': {}
+        }
         
-        if website_root:
-            sidebar_path = website_root / "sidebars.ts"
-            write_file(str(sidebar_path), sidebar_config)
-            self.logger.info(f"Generated Docusaurus sidebar at: {sidebar_path}")
-        else:
-            # Fallback: save in output directory as a reference
-            sidebar_path = output_path / "sidebars.ts.example"
-            write_file(str(sidebar_path), sidebar_config)
-            self.logger.warning(f"Could not find Docusaurus website root. Saved example at: {sidebar_path}")
-            self.logger.warning("Please copy this to your Docusaurus website root and rename to sidebars.ts")
+        # Check for README
+        if (docs_path / "README.md").exists():
+            doc_id = f"{prefix}/README" if prefix else "README"
+            structure['readme'] = doc_id
+        
+        # Scan subdirectories
+        for item in sorted(docs_path.iterdir()):
+            if item.is_dir():
+                category_name = item.name
+                category_items = []
+                
+                # Scan files in this category
+                for doc_file in sorted(item.glob("*.md")):
+                    if doc_file.name == "README.md":
+                        continue  # Skip README in subdirs
+                    
+                    # Build doc ID without .md extension
+                    doc_name = doc_file.stem
+                    if prefix:
+                        doc_id = f"{prefix}/{category_name}/{doc_name}"
+                    else:
+                        doc_id = f"{category_name}/{doc_name}"
+                    
+                    category_items.append({
+                        'id': doc_id,
+                        'name': doc_name
+                    })
+                
+                if category_items:
+                    structure['categories'][category_name] = category_items
+        
+        return structure
+    
+    def _build_sidebar_items(self, structure: Dict[str, Any]) -> str:
+        """Build sidebar items JSON string from structure."""
+        items = []
+        
+        # Add README if exists
+        if structure['readme']:
+            items.append(f"""    {{
+      type: 'doc',
+      id: '{structure['readme']}',
+      label: 'Documentation Home',
+    }}""")
+        
+        # Define category order and labels
+        category_order = {
+            'overview': {'label': 'Overview', 'collapsed': False},
+            'getting-started': {'label': 'Getting Started', 'collapsed': False},
+            'features': {'label': 'Features', 'collapsed': False},
+            'architecture': {'label': 'Architecture', 'collapsed': False},
+            'api': {'label': 'API Reference', 'collapsed': True},
+            'guides': {'label': 'Guides', 'collapsed': False},
+        }
+        
+        # Build categories in order
+        for category_name in category_order.keys():
+            if category_name in structure['categories']:
+                category_info = category_order[category_name]
+                items.append(self._build_category_item(
+                    category_name,
+                    category_info['label'],
+                    structure['categories'][category_name],
+                    category_info['collapsed']
+                ))
+        
+        # Add remaining categories not in the predefined order
+        for category_name, category_items in structure['categories'].items():
+            if category_name not in category_order:
+                label = category_name.replace('-', ' ').replace('_', ' ').title()
+                items.append(self._build_category_item(
+                    category_name,
+                    label,
+                    category_items,
+                    False
+                ))
+        
+        return "[\n" + ",\n".join(items) + ",\n  ]"
+    
+    def _build_category_item(self, category_name: str, label: str, items: List[Dict[str, str]], collapsed: bool) -> str:
+        """Build a single category item for sidebar."""
+        # Define preferred order for common doc names
+        doc_order = ['index', 'installation', 'quick-start', 'configuration', 'architecture', 'technology-stack', 'components']
+        
+        # Sort items by preferred order, then alphabetically
+        def sort_key(item):
+            name = item['name']
+            if name in doc_order:
+                return (0, doc_order.index(name))
+            return (1, name)
+        
+        sorted_items = sorted(items, key=sort_key)
+        
+        # Build items list
+        item_ids = [f"        '{item['id']}'" for item in sorted_items]
+        items_str = ",\n".join(item_ids)
+        
+        return f"""    {{
+      type: 'category',
+      label: '{label}',
+      collapsed: {str(collapsed).lower()},
+      items: [
+{items_str}
+      ],
+    }}"""
     
     def _update_docusaurus_config(self, analyses: List[Dict[str, Any]]) -> None:
         """Update Docusaurus config with GitHub repository information."""

@@ -1,6 +1,7 @@
 """Command-line interface for SourceScribe."""
 
 import sys
+import os
 import click
 from pathlib import Path
 from typing import Optional
@@ -84,6 +85,27 @@ def generate(
         
         # Set project path
         cfg.repository.path = str(Path(project_path).resolve())
+        
+        # Validate project path is not a system directory
+        resolved_path = Path(cfg.repository.path)
+        home_dir = Path.home()
+        
+        # Warn if scanning from home directory
+        if resolved_path == home_dir:
+            click.echo(click.style('\n⚠ Warning: Running from home directory!', fg='yellow', bold=True), err=True)
+            click.echo(f'\nYou are about to scan your entire home directory: {home_dir}', err=True)
+            click.echo('This may take a very long time and could access cloud storage.\n', err=True)
+            if not click.confirm('Are you sure you want to continue?', default=False):
+                click.echo('\nOperation cancelled. Please cd into a specific project directory first.', err=True)
+                sys.exit(1)
+        
+        # Check for other problematic directories
+        problematic_dirs = ['Library', 'Applications', 'System', 'usr', 'opt']
+        if any(resolved_path.name == dir_name for dir_name in problematic_dirs):
+            click.echo(click.style(f'\n⚠ Warning: Scanning system directory "{resolved_path.name}"', fg='yellow', bold=True), err=True)
+            click.echo('This is not recommended and may cause errors or timeouts.\n', err=True)
+            if not click.confirm('Continue anyway?', default=False):
+                sys.exit(1)
         
         logger.info(f"Generating documentation for: {cfg.repository.path}")
         logger.info(f"Using {cfg.llm.provider} ({cfg.llm.model})")

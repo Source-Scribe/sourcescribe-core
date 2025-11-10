@@ -67,6 +67,18 @@ class RepositoryConfig(BaseModel):
             "*.so", "*.dylib", "*.dll",
             "website", "*/website/*",  # Exclude Docusaurus site
             "docs", "*/docs/*",  # Exclude generated docs
+            # Cloud storage directories
+            "Library/CloudStorage/*", "*/Library/CloudStorage/*",
+            "Dropbox/*", "*/Dropbox/*",
+            "Google Drive/*", "*/Google Drive/*",
+            "OneDrive/*", "*/OneDrive/*",
+            "iCloud Drive/*", "*/iCloud Drive/*",
+            # System directories
+            "Library/*", "*/Library/*",
+            ".Trash/*", "*/.Trash/*",
+            "Applications/*", "*/Applications/*",
+            ".local/*", "*/.local/*",
+            ".cache/*", "*/.cache/*",
         ],
         description="Patterns to exclude from scanning"
     )
